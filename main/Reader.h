@@ -2,178 +2,178 @@
 
 namespace SSF4ce {
 	using namespace System;
-	using namespace System::IO;
+	using namespace IO;
 
 	typedef unsigned short ushort;
 	typedef unsigned long ulong;
-	typedef unsigned char Byte;
 
 	value struct EMGReturn
 	{
-		Byte*		DDSid;			// Массив id прикреплённых текстур к подмешам.
-		ushort		SubmodelCount;	// Кол-во подмешей в EMG.
-		ushort*		IndexCount;		// Массив кол-в индексов каждого подмеша.
-		ushort*		NodesCount;		// Массив кол-в костей каждого подмеша.
-		ushort		VertexCount;	// Кол-во вертексов.
-		ushort		VertexSize;		// Размер блока вертексов.
-		ushort**	IndiceArray;	// Массив лент треугольников.
-		ushort**	NodesArray;		// Массив костей.
-		Byte*		VertexArray;	// Массив блоков вертексов.
+		byte*		DDSid;			// Array of submodel's texture ids.
+		ushort		SubmodelCount;	// Submodels in EMG.
+		ushort*		IndexCount;		// Array of Indexes amount of each submodel.
+		ushort*		NodesCount;		// Array of Nodes amount of each submodel.
+		ushort		VertexCount;	// Amount of vertices.
+		ushort		VertexSize;		// Size of vertex.
+		ushort**	IndiceArray;	// Array of indeces blocks.
+		ushort**	NodesArray;		// Array of Nodes.
+		byte*		VertexArray;	// Array of vertices blocks.
 	};
 
-	EMGReturn ReadEMG(String^ FileName, int EMGposition) // Входящие данные: имя файла, позиция EMG в EMO
+	// FileName, EMG position in EMO
+	inline EMGReturn ReadEMG(String^ FileName, int EMGposition)
 	{
-		EMGReturn retval;
+		EMGReturn return_value;
 
-		FileStream^ fs = File::OpenRead(FileName);
-		BinaryReader^ br = gcnew BinaryReader(fs);
+		auto fs = File::OpenRead(FileName);
+		auto br = gcnew BinaryReader(fs);
 		
-		fs->Position = EMGposition + 16; // 16 - Сдвиг на заголовок EMG.
+		fs->Position = EMGposition + 16; // 16 - offset EMG header.
 
 		fs->Position = fs->Position + 4; //EMGHeader1->Number711 = (ushort)br->ReadUInt32(); 
-		ushort TextureCount = (ushort)br->ReadUInt32();			// Кол-во привязанных текстур к подмоделям.
+		const auto texture_count = ushort(br->ReadUInt32());			// Amount of Submodel's textures.
 		fs->Position = fs->Position + 4; //EMGHeader1->Something = (ushort)br->ReadUInt32();
-		ushort TextureOffset = (ushort)br->ReadUInt32();		// Позиция списка сдвигов текстур.
+		const auto texture_offset = ushort(br->ReadUInt32());			// Position of "Texture offsets" list.
 
-		ushort VertexCount = (ushort)br->ReadUInt16();			// Кол-во вертексов.
-		ushort VertexSize = (ushort)br->ReadUInt16();			// Размер блока вертексов.
-		ulong  VertexOffset = (ulong)br->ReadUInt32();			// Позиция вертексов в файле.
-		fs->Position = fs->Position + 2; //EMGHeader1->Empty = (ushort)br->ReadUInt16(); // Пустые 2 байта. (strips?)
-		ushort SubmodelCount = (ushort)br->ReadUInt16();		// Кол-во подмешей в EMG.
-		ushort SubMesheListOffset = (ushort)br->ReadUInt16();	// Сдвиг на список адресов подмешей.
+		const auto vertex_count = ushort(br->ReadUInt16());				// Amount of vertices.
+		const auto vertex_size = ushort(br->ReadUInt16());				// Size of vertex.
+		const auto vertex_offset = ulong(br->ReadUInt32());				// Position of vertexes in file.
+		fs->Position = fs->Position + 2; //EMGHeader1->Empty = (ushort)br->ReadUInt16(); // Empty 2 bytes. (strips?)
+		const auto submodel_count = ushort(br->ReadUInt16());			// Submodels in EMG.
+		const auto submeshes_list_offset = ushort(br->ReadUInt16());	// Offset to list of addresses of submeshes.
 
 		//==================================================================
-		// Текстуры.
+		// Textures.
 		//==================================================================
-		fs->Position = EMGposition + 16 + TextureOffset;
+		fs->Position = EMGposition + 16 + texture_offset;
 
-		ushort* Offsets = new ushort[TextureCount];
-		for (ushort i = 0; i < TextureCount; i++)
-			Offsets[i] = (ushort)br->ReadUInt32();			
+		const auto offsets = new ushort[texture_count];
+		for (auto i = 0; i < texture_count; i++)
+			offsets[i] = ushort(br->ReadUInt32());
 
-		Byte* id = new Byte[TextureCount];
-		for (ushort i = 0; i < TextureCount; i++)
+		const auto id = new byte[texture_count];
+		for (auto i = 0; i < texture_count; i++)
 		{
-			fs->Position = EMGposition + 16 + Offsets[i] + 5;
-			id[i] = (Byte)br->ReadChar();
+			fs->Position = EMGposition + 16 + offsets[i] + 5;
+			id[i] = byte(br->ReadChar());
 		}
 
-		Byte* DDSid = new Byte[SubmodelCount];
+		const auto DDSid = new byte[submodel_count];
 
 		//==================================================================
-		// Индексы и кости
+		// Indeces and nodes
 		//==================================================================
-		ushort *IndexCount = new ushort[SubmodelCount]; // Массив кол-в индексов подмешей.
-		ushort **IndiceArray = new ushort*[SubmodelCount]; // 
+		const auto index_count = new ushort[submodel_count]; // Array of Indexes amount of each submodel.
+		const auto indices_array = new ushort*[submodel_count];
 
-		ushort *NodesCount = new ushort[SubmodelCount];
-		ushort **NodesArray = new ushort*[SubmodelCount];
+		const auto nodes_count = new ushort[submodel_count];
+		const auto nodes_array = new ushort*[submodel_count];
 
-		for (ushort i = 0; i < SubmodelCount; i++)
+		for (ushort i = 0; i < submodel_count; i++)
 		{
-			fs->Position = EMGposition + 16 + SubMesheListOffset + i * 4; // Ищется адрес подмеша из строки списка подмешей.
-			fs->Position = EMGposition + 16 + br->ReadUInt32() + 16; // 16 байт #EMG + читается сдвиг подмеша + 16 байт хрени
-			DDSid[i] = id[(Byte)br->ReadUInt16()]; // ID текстуры.
-			IndexCount[i] = (ushort)br->ReadUInt16(); // Кол-во индексов.
-			NodesCount[i] = (ushort)br->ReadUInt16(); // Кол-во костей.
+			fs->Position = EMGposition + 16 + submeshes_list_offset + i * 4; // Looking for submesh address in a list of submeshes
+			fs->Position = EMGposition + 16 + br->ReadUInt32() + 16; // 16 bytes #EMG + offset of submesh + 16 bytes of trash
+			DDSid[i] = id[byte(br->ReadUInt16())]; // Texture ID.
+			index_count[i] = ushort(br->ReadUInt16()); // Ammount of indeces.
+			nodes_count[i] = ushort(br->ReadUInt16()); // Ammount of nodes.
 			
-			fs->Position = fs->Position + 32; // пропуск названия из 32-х байтов.
+			fs->Position = fs->Position + 32; // skipping name (32 bytes).
 
-			IndiceArray[i] = new ushort[IndexCount[i]];
+			indices_array[i] = new ushort[index_count[i]];
 
-			// Заполнение массива индексами подмеша.
-			for (int a = 0; a < IndexCount[i]; a++)
+			// Filling array with submesh indeces.
+			for (auto a = 0; a < index_count[i]; a++)
 			{
-				IndiceArray[i][a] = (ushort)br->ReadUInt16();
+				indices_array[i][a] = ushort(br->ReadUInt16());
 			}
 
-			NodesArray[i] = new ushort[NodesCount[i]];
+			nodes_array[i] = new ushort[nodes_count[i]];
 
-			// Заполнение массива костями.
-			for (Byte a = 0; a < NodesCount[i]; a++)
+			// Filling array with nodes.
+			for (auto a = 0; a < nodes_count[i]; a++)
 			{
-				NodesArray[i][a] = (ushort)br->ReadUInt16();
+				nodes_array[i][a] = ushort(br->ReadUInt16());
 			}
 		}
 
 		//==================================================================
-		// Вертексы
+		// Vertices
 		//==================================================================
-		fs->Position = EMGposition + 16 + VertexOffset; // Адрес вертексов
-		Byte* VertexArray = new Byte[VertexCount * VertexSize]; // Массив данных о вертексах
-		for (int i = 0; i < VertexCount * VertexSize; i++)
+		fs->Position = EMGposition + 16 + vertex_offset; // Address of vertices
+		const auto vertex_array = new byte[vertex_count * vertex_size]; // Array of vertex data
+		for (auto i = 0; i < vertex_count * vertex_size; i++)
 		{
-			VertexArray[i] = (Byte)br->ReadByte();
+			vertex_array[i] = byte(br->ReadByte());
 		}
 
 		br->Close();
 		fs->Close();
 
-		retval.DDSid = DDSid;
-		retval.SubmodelCount = SubmodelCount;
-		retval.IndexCount	= IndexCount;
-		retval.NodesCount	= NodesCount;
-		retval.VertexCount	= VertexCount;
-		retval.VertexSize	= VertexSize;
-		retval.IndiceArray	= IndiceArray;
-		retval.NodesArray	= NodesArray;
-		retval.VertexArray	= VertexArray;
-		return retval;
+		return_value.DDSid = DDSid;
+		return_value.SubmodelCount = submodel_count;
+		return_value.IndexCount	= index_count;
+		return_value.NodesCount	= nodes_count;
+		return_value.VertexCount = vertex_count;
+		return_value.VertexSize	= vertex_size;
+		return_value.IndiceArray = indices_array;
+		return_value.NodesArray	= nodes_array;
+		return_value.VertexArray = vertex_array;
+		return return_value;
 	}
 
 	//==================================================================
 
 	value struct EMBReturn
 	{
-		ushort DDScount;	// Кол-во dds в EMB.
-		ulong* DDSsize;		// Размеры каждого dds.
-		Byte** DDSArray;	// Сами dds.
+		ushort DDScount;	// DDS ammount in EMB.
+		ulong* DDSsize;		// Size of each DDS.
+		byte** DDSArray;	// DDS itself.
 	};
 
-	EMBReturn ReadEMB(String^ FileName)
+	inline EMBReturn ReadEMB(String^ FileName)
 	{
-		EMBReturn retval;
+		EMBReturn return_value;
 
-		FileStream^ fs = File::OpenRead(FileName);
-		BinaryReader^ br = gcnew BinaryReader(fs);
+		auto fs = File::OpenRead(FileName);
+		auto br = gcnew BinaryReader(fs);
 
 		// Кол-во DDS.
 		fs->Position = 12;
-		ushort DDScount = br->ReadInt16();
+		const ushort DDScount = br->ReadInt16();
 
 		//
-		ulong *DDSoffset = new ulong[DDScount];
-		ulong *DDSsize = new ulong[DDScount];
-		Byte **DDSArray = new Byte*[DDScount];
+		const auto DDSoffset = new ulong[DDScount];
+		const auto DDSsize = new ulong[DDScount];
+		const auto DDSArray = new byte*[DDScount];
 
-		// Список сдвигов на DDS и их размеры.
+		// List of offsets to DDS and sizes.
 		fs->Position = 32;
 		for (ulong i = 0; i < DDScount; i++)
 		{
-			DDSoffset[i] = br->ReadInt32() + (i * 2 * 4); // + учёт DDSsize
+			DDSoffset[i] = br->ReadInt32() + (i * 2 * 4); // + DDSsize
 			DDSsize[i] = br->ReadInt32();
 		}				
 
 		//
 		for (ulong i = 0; i < DDScount; i++)
 		{
-			DDSArray[i] = new Byte[DDSsize[i]];
+			DDSArray[i] = new byte[DDSsize[i]];
 
 			fs->Position = 32 + DDSoffset[i];
 
 			for (ulong a = 0; a < DDSsize[i]; a++)
 			{
-				DDSArray[i][a] = (Byte)br->ReadByte();
+				DDSArray[i][a] = byte(br->ReadByte());
 			}
 		}
 
 		br->Close();
 		fs->Close();
 
-		retval.DDScount = DDScount;
-		retval.DDSsize = DDSsize;
-		retval.DDSArray = DDSArray;		
-		return retval;
+		return_value.DDScount = DDScount;
+		return_value.DDSsize = DDSsize;
+		return_value.DDSArray = DDSArray;		
+		return return_value;
 	}
 
 	//==================================================================
@@ -183,69 +183,69 @@ namespace SSF4ce {
 		ushort	NodesCount;
 		char**	NodeName;
 		short*	ParentNodeArray;
-		Byte**	Matrix4x4;
+		byte**	Matrix4x4;
 	};
 
-	SkeletonReturn ReadSkeleton(String^ FileName, Byte offset) // EMO - 16, EMA - 12
+	inline SkeletonReturn ReadSkeleton(String^ FileName, byte offset) // EMO - 16, EMA - 12
 	{
-		SkeletonReturn retval;
+		SkeletonReturn return_value;
 
-		FileStream^ fs = File::OpenRead(FileName);
-		BinaryReader^ br = gcnew BinaryReader(fs);
+		auto fs = File::OpenRead(FileName);
+		auto br = gcnew BinaryReader(fs);
 
-		fs->Position = offset; // Пропуск на позицию о костях.
-		unsigned int SkeletalInfoOffset = br->ReadUInt32();
+		fs->Position = offset; // Skipping to position about nodes.
+		const auto skeletal_info_offset = br->ReadUInt32();
 
-		fs->Position = SkeletalInfoOffset; // Переход на позицию данных о костях.
-		ushort NodesCount = br->ReadUInt16(); // Кол-во нодов.
+		fs->Position = skeletal_info_offset; // Skipping to data about nodes.
+		const auto nodes_count = br->ReadUInt16(); // Nodes amount.
 
-		fs->Position = fs->Position + 6; // Пропуск 4 байт.
-		ushort StartOffset = br->ReadUInt32(); // Размер заголовка блока.
-		ushort NamesOffsetsOffset = br->ReadUInt32(); // Сдвиг на список сдвигов о названиях нодов.
+		fs->Position = fs->Position + 6; // Skipping 4 bytes.
+		const ushort start_offset = br->ReadUInt32(); // Header size.
+		const ushort names_offsets_offset = br->ReadUInt32(); // Offset to offsets about node names.
 
 		//==================================================================
 
-		fs->Position = SkeletalInfoOffset + NamesOffsetsOffset; // Сдвиги на названия.
-		unsigned int* NodesNamesOffsets = new unsigned int[NodesCount]; // Чтение.
-		for (ushort i = 0; i < NodesCount; i++)
-			NodesNamesOffsets[i] = br->ReadUInt32();
+		fs->Position = skeletal_info_offset + names_offsets_offset; // Offsets to names.
+		const auto nodes_names_offsets = new unsigned int[nodes_count]; // Reading.
+		for (auto i = 0; i < nodes_count; i++)
+			nodes_names_offsets[i] = br->ReadUInt32();
 
-		char** NodeName = new char*[NodesCount];
+		const auto node_name = new char*[nodes_count];
 
-		for (ushort i = 0; i < NodesCount; i++)
+		for (auto i = 0; i < nodes_count; i++)
 		{
-			fs->Position = SkeletalInfoOffset + NodesNamesOffsets[i];
+			fs->Position = skeletal_info_offset + nodes_names_offsets[i];
 
-			ushort size = 1; // Длинна названия для создания массива.
+			ushort size = 1; // Length of name for array creation.
 			while (br->ReadChar() != 0)
 				size++;
 
-			NodeName[i] = new char[size];
+			node_name[i] = new char[size];
 
-			fs->Position = fs->Position - size; // Возврат позиции.
+			fs->Position = fs->Position - size; // Position return.
 
-			for (ushort a = 0; a < size; a++) // Чтение в массив.
-				NodeName[i][a] = (char)br->ReadChar();
+			for (auto a = 0; a < size; a++) // Reading to array.
+				node_name[i][a] = char(br->ReadChar());
 		}
 
 		//==================================================================
 
-		fs->Position = SkeletalInfoOffset + StartOffset; // Кости.
+		fs->Position = skeletal_info_offset + start_offset; // Nodes.
 
-		short* ParentNodeArray = new short[NodesCount];
-		Byte** Matrix4x4 = new Byte*[NodesCount];
+		const auto ParentNodeArray = new short[nodes_count];
+		const auto Matrix4x4 = new byte*[nodes_count];
 
-		for (ushort i = 0; i < NodesCount; i++)
+		for (auto i = 0; i < nodes_count; i++)
 		{
-			ushort temp = br->ReadUInt16();
-			if (temp == 65535)					// FFFF - коренной.
+			const auto temp = br->ReadUInt16();
+			if (temp == 65535)	// FFFF - root.
 				ParentNodeArray[i] = -1;	
 			else
 				ParentNodeArray[i] = temp;
 
-			fs->Position = fs->Position + 14; // Пропуск на позицию о матрице.
+			fs->Position = fs->Position + 14; // Skipping to position about matrix.
 
-			Matrix4x4[i] = new Byte[64];
+			Matrix4x4[i] = new byte[64];
 			for (ushort a = 0; a < 64; a++)
 				Matrix4x4[i][a] = br->ReadByte();
 		}
@@ -253,11 +253,11 @@ namespace SSF4ce {
 		br->Close();
 		fs->Close();
 
-		retval.NodesCount = NodesCount;
-		retval.NodeName = NodeName;
-		retval.ParentNodeArray = ParentNodeArray;
-		retval.Matrix4x4 = Matrix4x4;
-		return retval;
+		return_value.NodesCount = nodes_count;
+		return_value.NodeName = node_name;
+		return_value.ParentNodeArray = ParentNodeArray;
+		return_value.Matrix4x4 = Matrix4x4;
+		return return_value;
 	}
 
 	//==================================================================
@@ -269,8 +269,8 @@ namespace SSF4ce {
 
 		ushort* Duration;
 		ushort** NodeIndex;
-		Byte** NodeTransformType;
-		Byte** TransformFlag;
+		byte** NodeTransformType;
+		byte** TransformFlag;
 		ushort** NodeStepCount;
 		ushort* cmdOffsetCount;		
 		ushort*** Frame;		
@@ -278,125 +278,125 @@ namespace SSF4ce {
 		float*** NodeTangentValue;		
 	};
 
-	EMAReturn ReadEMA(String^ FileName)
+	inline EMAReturn ReadEMA(String^ FileName)
 	{
-		EMAReturn retval;
+		EMAReturn return_value;
 
-		FileStream^ fs = File::OpenRead(FileName);
-		BinaryReader^ br = gcnew BinaryReader(fs);
+		auto fs = File::OpenRead(FileName);
+		auto br = gcnew BinaryReader(fs);
 
-		fs->Position = 6; // Заголовок. 
-		ushort HeaderSize = br->ReadUInt16();
+		fs->Position = 6; // Header. 
+		const auto header_size = br->ReadUInt16();
 
-		fs->Position = 16; // кол-во анимаций.
-		ushort AnimationCount = br->ReadUInt16();
+		fs->Position = 16; // Ammount of animations.
+		const auto animation_count = br->ReadUInt16();
 
-		fs->Position = HeaderSize; // сдвиги на анимации
-		ulong* AnimationOffsets = new ulong[AnimationCount];
-		for (ushort i = 0; i < AnimationCount; i++)
-			AnimationOffsets[i] = br->ReadUInt32(); //
+		fs->Position = header_size; // Animations offsets
+		const auto animation_offsets = new ulong[animation_count];
+		for (auto i = 0; i < animation_count; i++)
+			animation_offsets[i] = br->ReadUInt32(); //
 
-		char** AnimationName = new char*[AnimationCount];
+		const auto animation_name = new char*[animation_count];
 
-		ushort* Duration = new ushort[AnimationCount];
-		ushort** NodeIndex = new ushort*[AnimationCount];
-		ushort* cmdOffsetCount = new ushort[AnimationCount];
-		ushort** NodeStepCount = new ushort*[AnimationCount];
-		ushort*** Frame = new ushort**[AnimationCount];
-		Byte** NodeTransformType = new Byte*[AnimationCount];
-		float*** NodeValue = new float**[AnimationCount];
-		float*** NodeTangentValue = new float**[AnimationCount];
-		Byte** TransformFlag = new Byte*[AnimationCount];
+		const auto duration = new ushort[animation_count];
+		const auto node_index = new ushort*[animation_count];
+		const auto cmd_offset_count = new ushort[animation_count];
+		const auto node_step_count = new ushort*[animation_count];
+		const auto frame = new ushort**[animation_count];
+		const auto node_transform_type = new byte*[animation_count];
+		const auto node_value = new float**[animation_count];
+		const auto node_tangent_value = new float**[animation_count];
+		const auto transform_flag = new byte*[animation_count];
 
-		for (ushort i = 0; i < AnimationCount; i++)
+		for (auto i = 0; i < animation_count; i++)
 		{
-			fs->Position = AnimationOffsets[i];
+			fs->Position = animation_offsets[i];
 
-			Duration[i]			= br->ReadUInt16();		// Длительность анимации.
-			cmdOffsetCount[i]	= br->ReadUInt16();		// cmdOffsetCount
-			ulong ValueCount	= br->ReadUInt32();		// valueCount
-			ulong temp4			= br->ReadUInt32();		// zero
-			ulong NameOffset	= br->ReadUInt32();		// Сдвиг на название.
-			ulong ValuesOffset	= br->ReadUInt32();		// valuesOffset
+			duration[i] = br->ReadUInt16();					// Animation duration.
+			cmd_offset_count[i] = br->ReadUInt16();			// cmdOffsetCount
+			const ulong value_count	= br->ReadUInt32();		// valueCount
+			br->ReadUInt32();								// zero
+			const ulong name_offset = br->ReadUInt32();		// Offset to name.
+			const ulong values_offset = br->ReadUInt32();	// valuesOffset
 
 			//==================================================================
-			fs->Position = AnimationOffsets[i] + NameOffset + 11; // 11 - хлам.
-			ushort size = 1; // Длинна названия для создания массива.
+			fs->Position = animation_offsets[i] + name_offset + 11; // 11 - trash.
+			ushort size = 1; // Length of name for array creation.
 			while (br->ReadChar() != 0)
 				size++;
-			AnimationName[i] = new char[size];
-			fs->Position = fs->Position - size; // Возврат позиции.
-			for (ushort a = 0; a < size; a++) // Чтение в массив.
-				AnimationName[i][a] = (char)br->ReadChar();				
+			animation_name[i] = new char[size];
+			fs->Position = fs->Position - size; // Position return.
+			for (ushort a = 0; a < size; a++) // Reading in array.
+				animation_name[i][a] = char(br->ReadChar());				
 			//==================================================================
 
-			fs->Position = AnimationOffsets[i] + ValuesOffset;
-			float* Values = new float[ValueCount];
-			for (ulong Value = 0; Value < ValueCount; Value++)
+			fs->Position = animation_offsets[i] + values_offset;
+			const auto Values = new float[value_count];
+			for (ulong Value = 0; Value < value_count; Value++)
 				Values[Value] = br->ReadSingle();
 
 			//==================================================================
 
-			fs->Position = AnimationOffsets[i] + 20;
-			ulong* cmdOffsets = new ulong[cmdOffsetCount[i]];
-			for (ulong cmdOffset = 0; cmdOffset < cmdOffsetCount[i]; cmdOffset++)
-				cmdOffsets[cmdOffset] = br->ReadUInt32();
+			fs->Position = animation_offsets[i] + 20;
+			const auto cmd_offsets = new ulong[cmd_offset_count[i]];
+			for (ulong cmd_offset = 0; cmd_offset < cmd_offset_count[i]; cmd_offset++)
+				cmd_offsets[cmd_offset] = br->ReadUInt32();
 
-			NodeIndex[i] = new ushort[cmdOffsetCount[i]];
-			NodeStepCount[i] = new ushort[cmdOffsetCount[i]];
-			Frame[i] = new ushort*[cmdOffsetCount[i]];
-			NodeTransformType[i] = new Byte[cmdOffsetCount[i]];
-			NodeValue[i] = new float*[cmdOffsetCount[i]];
-			NodeTangentValue[i] = new float*[cmdOffsetCount[i]];
-			TransformFlag[i] = new Byte[cmdOffsetCount[i]];
+			node_index[i] = new ushort[cmd_offset_count[i]];
+			node_step_count[i] = new ushort[cmd_offset_count[i]];
+			frame[i] = new ushort*[cmd_offset_count[i]];
+			node_transform_type[i] = new Byte[cmd_offset_count[i]];
+			node_value[i] = new float*[cmd_offset_count[i]];
+			node_tangent_value[i] = new float*[cmd_offset_count[i]];
+			transform_flag[i] = new Byte[cmd_offset_count[i]];
 
-			for (ulong cmdOffset = 0; cmdOffset < cmdOffsetCount[i]; cmdOffset++)
+			for (ulong cmd_offset = 0; cmd_offset < cmd_offset_count[i]; cmd_offset++)
 			{
-				fs->Position = AnimationOffsets[i] + cmdOffsets[cmdOffset];
+				fs->Position = animation_offsets[i] + cmd_offsets[cmd_offset];
 
-				NodeIndex[i][cmdOffset] = br->ReadUInt16(); // индекс кости.
-				NodeTransformType[i][cmdOffset] = (char)br->ReadChar(); // 0 -> translation, 1 -> rotation, 2->scale
-				TransformFlag[i][cmdOffset] = (char)br->ReadChar(); // 0 - x, 1 - y, 2 - z
-				NodeStepCount[i][cmdOffset] = br->ReadUInt16(); //(stepCount))
-				ushort IndicesOffset = br->ReadUInt16(); //(indicesOffset));
+				node_index[i][cmd_offset] = br->ReadUInt16(); // index of node.
+				node_transform_type[i][cmd_offset] = char(br->ReadChar()); // 0 -> translation, 1 -> rotation, 2->scale
+				transform_flag[i][cmd_offset] = char(br->ReadChar()); // 0 - x, 1 - y, 2 - z
+				node_step_count[i][cmd_offset] = br->ReadUInt16(); //(stepCount))
+				const auto indices_offset = br->ReadUInt16(); //(indicesOffset));
 
-				Frame[i][cmdOffset] = new ushort[NodeStepCount[i][cmdOffset]];
-				NodeValue[i][cmdOffset] = new float[NodeStepCount[i][cmdOffset]];
-				NodeTangentValue[i][cmdOffset] = new float[NodeStepCount[i][cmdOffset]];
+				frame[i][cmd_offset] = new ushort[node_step_count[i][cmd_offset]];
+				node_value[i][cmd_offset] = new float[node_step_count[i][cmd_offset]];
+				node_tangent_value[i][cmd_offset] = new float[node_step_count[i][cmd_offset]];
 
-				for (ushort a = 0; a < NodeStepCount[i][cmdOffset]; a++)
+				for (ushort a = 0; a < node_step_count[i][cmd_offset]; a++)
 				{
-					if (TransformFlag[i][cmdOffset] & 0x20)
-						Frame[i][cmdOffset][a] = br->ReadUInt16();
+					if (transform_flag[i][cmd_offset] & 0x20)
+						frame[i][cmd_offset][a] = br->ReadUInt16();
 					else
-						Frame[i][cmdOffset][a] = (ushort)br->ReadByte();						
+						frame[i][cmd_offset][a] = ushort(br->ReadByte());						
 				}
 
-				fs->Position = AnimationOffsets[i] + cmdOffsets[cmdOffset] + IndicesOffset;
+				fs->Position = animation_offsets[i] + cmd_offsets[cmd_offset] + indices_offset;
 
-				for (ushort a = 0; a < NodeStepCount[i][cmdOffset]; a++)
+				for (ushort a = 0; a < node_step_count[i][cmd_offset]; a++)
 				{
-					if (TransformFlag[i][cmdOffset] & 0x40)
+					if (transform_flag[i][cmd_offset] & 0x40)
 					{
-						ulong index = br->ReadUInt32();
-						unsigned int valueindex = (index & 0x3FFFFFFF);
-						NodeValue[i][cmdOffset][a] = Values[valueindex];
+						const ulong index = br->ReadUInt32();
+						const unsigned int value_index = index & 0x3FFFFFFF;
+						node_value[i][cmd_offset][a] = Values[value_index];
 
-						unsigned char highOrderBits = ((index >> 30) & 0x03);
-						unsigned int tangentIndex = highOrderBits == 0 ? ~0 : (valueindex + highOrderBits);
-						if (tangentIndex != ~0)
-							NodeTangentValue[i][cmdOffset][a] = Values[tangentIndex];
+						const byte high_order_bits = index >> 30 & 0x03;
+						const auto tangent_index = high_order_bits == 0 ? ~0 : value_index + high_order_bits;
+						if (tangent_index != ~0)
+							node_tangent_value[i][cmd_offset][a] = Values[tangent_index];
 					}						
 					else
 					{
-						ushort index = br->ReadUInt16();
-						unsigned int valueindex = (index & 0x3FFF);
-						NodeValue[i][cmdOffset][a] = Values[valueindex];					
+						const auto index = br->ReadUInt16();
+						const unsigned int value_index = index & 0x3FFF;
+						node_value[i][cmd_offset][a] = Values[value_index];
 
-						unsigned char highOrderBits = ((index >> 14) & 0x03);
-						unsigned int tangentIndex = highOrderBits == 0 ? ~0 : (valueindex + highOrderBits);
-						if (tangentIndex != ~0)
-							NodeTangentValue[i][cmdOffset][a] = Values[tangentIndex];
+						const byte high_order_bits = index >> 14 & 0x03;
+						const auto tangent_index = high_order_bits == 0 ? ~0 : value_index + high_order_bits;
+						if (tangent_index != ~0)
+							node_tangent_value[i][cmd_offset][a] = Values[tangent_index];
 					}
 				}
 			}
@@ -405,19 +405,19 @@ namespace SSF4ce {
 		br->Close();
 		fs->Close();
 
-		retval.AnimationCount = AnimationCount;
-		retval.AnimationName = AnimationName;
+		return_value.AnimationCount = animation_count;
+		return_value.AnimationName = animation_name;
 
-		retval.Duration = Duration;
-		retval.NodeIndex = NodeIndex;
-		retval.NodeTransformType = NodeTransformType;
-		retval.TransformFlag = TransformFlag;
-		retval.NodeStepCount = NodeStepCount;
-		retval.cmdOffsetCount = cmdOffsetCount;		
-		retval.Frame = Frame;		
-		retval.NodeValue = NodeValue;
-		retval.NodeTangentValue = NodeTangentValue;
+		return_value.Duration = duration;
+		return_value.NodeIndex = node_index;
+		return_value.NodeTransformType = node_transform_type;
+		return_value.TransformFlag = transform_flag;
+		return_value.NodeStepCount = node_step_count;
+		return_value.cmdOffsetCount = cmd_offset_count;		
+		return_value.Frame = frame;		
+		return_value.NodeValue = node_value;
+		return_value.NodeTangentValue = node_tangent_value;
 		
-		return retval;
+		return return_value;
 	}
 }

@@ -70,9 +70,9 @@ namespace SSF4ce {
 			this->label1->AutoSize = true;
 			this->label1->Location = System::Drawing::Point(32, 20);
 			this->label1->Name = L"label1";
-			this->label1->Size = System::Drawing::Size(109, 65);
+			this->label1->Size = System::Drawing::Size(152, 65);
 			this->label1->TabIndex = 1;
-			this->label1->Text = L"Barnacle 31.10.2014 \r\n\r\nUSF4 Character Extractor 0.2\r\n\r\n2014-2018";
+			this->label1->Text = L"Barnacle 31.10.2014 \r\n\r\nUSF4 Character Extractor 0.2a\r\n\r\n2014-2019";
 			// 
 			// AboutBox
 			// 

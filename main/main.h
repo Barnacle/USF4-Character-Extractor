@@ -93,7 +93,7 @@ namespace SSF4ce {
 	private: System::ComponentModel::IContainer^  components;
 
 
-	// Фикс двойного нажатия.
+	// Double click fix.
 	private: System::Windows::Forms::TreeView^  treeView1; // Comment this.
 	//private: NewTreeView^  treeView1;
 
@@ -445,21 +445,19 @@ private: System::Void TopSplitContainer_Panel2_MouseUp(System::Object^  sender, 
 private: System::Void TopSplitContainer_Panel2_MouseDown(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e) {
 			 m_D3DWrap->WrapOnMouseButtonDown((short)Control::MousePosition.X, (short)Control::MousePosition.Y);
 }
-private: System::Void openToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e) {	
-
-			String^ SteamPath;
+private: System::Void openToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e) {
 			if (steamToolStripMenuItem->Checked)
 			{
 				try{
-					RegistryKey^ rk = Registry::CurrentUser->OpenSubKey("Software\\Valve\\Steam", false);
-					SteamPath = rk->GetValue("SteamPath")->ToString();
+					auto rk = Registry::CurrentUser->OpenSubKey("Software\\Valve\\Steam", false);
+					auto steam_path = rk->GetValue("SteamPath")->ToString();
 					rk->Close();
 
-					if (SteamPath)
+					if (steam_path)
 					{
-						SteamPath = SteamPath->Replace("/", "\\");
-						SteamPath += "\\SteamApps\\common\\Super Street Fighter IV - Arcade Edition\\resource\\battle\\chara";
-						openFileDialog1->InitialDirectory = SteamPath;
+						steam_path = steam_path->Replace("/", "\\");
+						steam_path += "\\SteamApps\\common\\Super Street Fighter IV - Arcade Edition\\resource\\battle\\chara";
+						openFileDialog1->InitialDirectory = steam_path;
 					}
 				}
 				catch(...){}
@@ -473,70 +471,70 @@ private: System::Void openToolStripMenuItem_Click(System::Object^  sender, Syste
 				treeView1->Nodes[1]->Nodes->Clear();
 				treeView1->Nodes[2]->Nodes->Clear();
 
-				FileStream^ fs = File::OpenRead(openFileDialog1->FileName);
-				BinaryReader^ br = gcnew BinaryReader(fs);
+				auto fs = File::OpenRead(openFileDialog1->FileName);
+				auto br = gcnew BinaryReader(fs);
 
-				// Эта часть кода читает первые 4 байта, что является идентификатором #EMO
-				if (String::Compare(Encoding::UTF8->GetString(br->ReadBytes(4)), "#EMO", true) == 0) // Если равно, то продолжаем чтение.
+				// Reading first 4 bytes, which are #EMO id
+				if (String::Compare(Encoding::UTF8->GetString(br->ReadBytes(4)), "#EMO", true) == 0) // if 0, then skip
 				{
 					//==================================================================
 					// Mesh
 					//==================================================================
 
-					SkeletonReturn SkeletonReturn1 = ReadSkeleton(openFileDialog1->FileName, 16);
+					auto skeleton_return = ReadSkeleton(openFileDialog1->FileName, 16);
 
-					// Данные о костях, отправка в dx.
+					// Data about nodes, sending in dx.
 					
 					//==================================================================
 
-					fs->Position = 32; // Пропуск 32 байт на позицию о кол-ве EMG.
-					ushort EMGcount = br->ReadInt16(); 
+					fs->Position = 32; // Skipping 32 bytes to position about EMG ammount.
+					const ushort EMG_count = br->ReadInt16(); 
 
 					//==================================================================
 
-					fs->Position = 32 + 4; // Позиция списка сдвигов на сдвиги названий EMG.
-					unsigned int EMGnamesOffsetsOffset = br->ReadInt32(); // Чтение.
-					fs->Position = 32 + EMGnamesOffsetsOffset; // Позиция списка сдвигов на названия EMG.
-					array<unsigned int>^ EMGnamesOffsets = gcnew array<unsigned int>(EMGcount); // Чтение.
-					for (ushort i = 0; i < EMGcount; i++)
+					fs->Position = 32 + 4; // // Position of "offsets list" of EMG names offsets.
+					unsigned int EMG_namesOffsets_Offset = br->ReadInt32(); // Reading.
+					fs->Position = 32 + EMG_namesOffsets_Offset; // // Position of "offsets list" of EMG names.
+					auto EMG_namesOffsets = gcnew array<unsigned int>(EMG_count); // Reading.
+					for (auto i = 0; i < EMG_count; i++)
 					{
-						EMGnamesOffsets[i] = br->ReadUInt32();
+						EMG_namesOffsets[i] = br->ReadUInt32();
 					}
 
-					array<String^>^ EMGnames = gcnew array<String^>(EMGcount);
-					for (ushort i = 0; i < EMGcount; i++)
+					auto EMG_names = gcnew array<String^>(EMG_count);
+					for (auto i = 0; i < EMG_count; i++)
 					{
-						fs->Position = 32 + EMGnamesOffsets[i];
+						fs->Position = 32 + EMG_namesOffsets[i];
 
-						StringBuilder^ sb = gcnew StringBuilder;
+						auto sb = gcnew StringBuilder;
 						while (br->ReadChar() != 0)
 						{
 							fs->Position--;
 							sb->Append(br->ReadChar());
 						}							
 
-						EMGnames[i] = sb->ToString();
+						EMG_names[i] = sb->ToString();
 					}		
 
 					//==================================================================
 
-					fs->Position = 32 + 8; // Позиция списка сдвигов на все EMG.
+					fs->Position = 32 + 8; // Position of "offsets list" of every EMG.
 
-					array<unsigned int>^ EMGoffsets = gcnew array<unsigned int>(EMGcount);
-					array<EMGReturn>^ EMGReturn1 = gcnew array<EMGReturn>(EMGcount);
+					auto EMG_offsets = gcnew array<unsigned int>(EMG_count);
+					auto EMG_return = gcnew array<EMGReturn>(EMG_count);
 
-					m_D3DWrap->WrapCreateBuffers(EMGcount); // Предварительное создание массива буферов.
+					m_D3DWrap->WrapCreateBuffers(EMG_count); // Creating array of buffers.
 
-					for (ushort i = 0; i < EMGcount; i++)
+					for (ushort i = 0; i < EMG_count; i++)
 					{
-						EMGoffsets[i] = br->ReadInt32(); // Заполнение массива списком.
-						EMGReturn1[i] = ReadEMG(openFileDialog1->FileName, 32 + EMGoffsets[i] + 16); // Заполнение массива данными о каждом EMG.
+						EMG_offsets[i] = br->ReadInt32(); // Filling array with list.
+						EMG_return[i] = ReadEMG(openFileDialog1->FileName, 32 + EMG_offsets[i] + 16); // Filling array with data about each EMG.
 						
-						m_D3DWrap->WrapLoadEMG(i, EMGReturn1[i].SubmodelCount, EMGReturn1[i].DDSid, EMGReturn1[i].IndexCount,
-							EMGReturn1[i].VertexCount, EMGReturn1[i].VertexSize,
-							EMGReturn1[i].IndiceArray, EMGReturn1[i].VertexArray);
+						m_D3DWrap->WrapLoadEMG(i, EMG_return[i].SubmodelCount, EMG_return[i].DDSid, EMG_return[i].IndexCount,
+							EMG_return[i].VertexCount, EMG_return[i].VertexSize,
+							EMG_return[i].IndiceArray, EMG_return[i].VertexArray);
 
-						treeView1->Nodes[0]->Nodes->Add(gcnew TreeNode((i + 1) + ". " + EMGnames[i]));
+						treeView1->Nodes[0]->Nodes->Add(gcnew TreeNode((i + 1) + ". " + EMG_names[i]));
 						treeView1->Nodes[0]->Nodes[i]->Checked = true;
 					}
 					
@@ -549,39 +547,39 @@ private: System::Void openToolStripMenuItem_Click(System::Object^  sender, Syste
 					// Textures
 					//==================================================================
 
-					array<Char>^ TrimChars = { 'o', 'b', 'e', 'm', 'j', '.' };	
-					String^ Path = Path::GetDirectoryName(openFileDialog1->FileName);
-					String^ Name = Path::GetFileName(openFileDialog1->FileName)->TrimEnd(TrimChars);
+					array<Char>^ trim_chars = { 'o', 'b', 'e', 'm', 'j', '.' };
+					const auto path = Path::GetDirectoryName(openFileDialog1->FileName);
+					auto name = Path::GetFileName(openFileDialog1->FileName)->TrimEnd(trim_chars);
 					
-					if (!File::Exists(Path + "\\" + Name + "_01.col.emb"))
+					if (!File::Exists(path + "\\" + name + "_01.col.emb"))
 					{						
 						//m_D3DWrap->WrapLoadDDS(0, 0, 0);
 					}						
 					else
 					{
-						fs = File::OpenRead(Path + "\\" + Name + "_01.col.emb");
-						BinaryReader^ br = gcnew BinaryReader(fs);
+						fs = File::OpenRead(path + "\\" + name + "_01.col.emb");
+						auto br2 = gcnew BinaryReader(fs);
 
-						if (String::Compare(Encoding::UTF8->GetString(br->ReadBytes(4)), "#EMB", true) == 0) // Если равно, то продолжаем чтение.
+						if (String::Compare(Encoding::UTF8->GetString(br2->ReadBytes(4)), "#EMB", true) == 0) // If 0, continue reading.
 						{
 							treeView1->Nodes[1]->Checked = true;
 
 							for (char i = 0; i < 22; i++)
 							{
-								String^ NodeName;
+								String^ node_name;
 								if (i < 9)
-									NodeName = Name + "_0" + (i + 1) + ".col.emb";
+									node_name = name + "_0" + (i + 1) + ".col.emb";
 								else
-									NodeName = Name + "_" + (i + 1) + ".col.emb";
+									node_name = name + "_" + (i + 1) + ".col.emb";
 
-								if (File::Exists(Path + "\\" + NodeName))
+								if (File::Exists(path + "\\" + node_name))
 								{
-									treeView1->Nodes[1]->Nodes->Add(gcnew TreeNode(NodeName));
+									treeView1->Nodes[1]->Nodes->Add(gcnew TreeNode(node_name));
 									treeView1->Nodes[1]->Nodes[treeView1->Nodes[1]->LastNode->Index]->Checked = true;
 								}
-							}							
+							}
 
-							EMBReturn result = ReadEMB(Path + "\\" + Name + "_01.col.emb");
+							auto result = ReadEMB(path + "\\" + name + "_01.col.emb");
 
 							m_D3DWrap->WrapLoadDDS(result.DDScount, result.DDSsize, result.DDSArray);
 
@@ -590,16 +588,16 @@ private: System::Void openToolStripMenuItem_Click(System::Object^  sender, Syste
 					}
 
 					// Normal map
-					if (!File::Exists(Path + "\\" + Name + ".nml.emb"))
+					if (!File::Exists(path + "\\" + name + ".nml.emb"))
 					{
 						//
 					}
 					else
 					{
-						fs = File::OpenRead(Path + "\\" + Name + ".nml.emb");
-						BinaryReader^ br = gcnew BinaryReader(fs);
+						fs = File::OpenRead(path + "\\" + name + ".nml.emb");
+						auto br2 = gcnew BinaryReader(fs);
 
-						if (String::Compare(Encoding::UTF8->GetString(br->ReadBytes(4)), "#EMB", true) == 0) // Если равно, то продолжаем чтение.
+						if (String::Compare(Encoding::UTF8->GetString(br2->ReadBytes(4)), "#EMB", true) == 0) // If 0, continue reading.
 						{
 							treeView1->Nodes[1]->Nodes->Add(gcnew TreeNode("Normal map"));
 							treeView1->Nodes[1]->Nodes[treeView1->Nodes[1]->LastNode->Index]->Checked = true;
@@ -610,28 +608,28 @@ private: System::Void openToolStripMenuItem_Click(System::Object^  sender, Syste
 					// Animations
 					//==================================================================
 
-					array<Char>^ TrimChars2 = { '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-					String^ Name2 = Name->TrimEnd(TrimChars2);
+					array<Char>^ trim_chars2 = { '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+					const auto name2 = name->TrimEnd(trim_chars2);
 
-					if (!File::Exists(Path + "\\" + Name2 + ".obj.ema"))
+					if (!File::Exists(path + "\\" + name2 + ".obj.ema"))
 					{
 						//
 					}
 					else
 					{
-						fs = File::OpenRead(Path + "\\" + Name2 + ".obj.ema");
-						BinaryReader^ br = gcnew BinaryReader(fs);
+						fs = File::OpenRead(path + "\\" + name2 + ".obj.ema");
+						auto br2 = gcnew BinaryReader(fs);
 
-						if (String::Compare(Encoding::UTF8->GetString(br->ReadBytes(4)), "#EMA", true) == 0) // Если равно, то продолжаем чтение.
+						if (String::Compare(Encoding::UTF8->GetString(br2->ReadBytes(4)), "#EMA", true) == 0) // If 0, continue reading.
 						{
 							treeView1->Nodes[2]->Checked = true;
 
-							EMAReturn result = ReadEMA(Path + "\\" + Name2 + ".obj.ema");
+							auto result = ReadEMA(path + "\\" + name2 + ".obj.ema");
 							
 							for (ushort i = 0; i < result.AnimationCount; i++)
 							{
-								String^ AnimationName = gcnew String(result.AnimationName[i]);
-								treeView1->Nodes[2]->Nodes->Add(gcnew TreeNode(i+1 + ". " + AnimationName));
+								const auto animation_name = gcnew String(result.AnimationName[i]);
+								treeView1->Nodes[2]->Nodes->Add(gcnew TreeNode(i+1 + ". " + animation_name));
 								treeView1->Nodes[2]->Nodes[i]->Checked = true;
 							}
 							
@@ -651,274 +649,274 @@ private: System::Void openToolStripMenuItem_Click(System::Object^  sender, Syste
 private: System::Void button1_Click(System::Object^  sender, System::EventArgs^  e) {
 			 treeView1->Enabled = false;
 
-			 array<Char>^ TrimChars = { 'o', 'b', 'e', 'm', 'j', '.' };
-			 String^ Path = Path::GetDirectoryName(openFileDialog1->FileName);
-			 String^ Name = Path::GetFileName(openFileDialog1->FileName)->TrimEnd(TrimChars);
+			 array<Char>^ trim_chars = { 'o', 'b', 'e', 'm', 'j', '.' };
+			 auto path = Path::GetDirectoryName(openFileDialog1->FileName);
+			 auto name = Path::GetFileName(openFileDialog1->FileName)->TrimEnd(trim_chars);
 
-			 if (treeView1->Nodes[0]->Checked == true) // меш
+			 if (treeView1->Nodes[0]->Checked == true) // mesh
 			 {
-				 // Код экспорта меша в SMD
-				 SaveFileDialog^ saveFileDialog1 = gcnew SaveFileDialog();
-				 saveFileDialog1->FileName = Name;
+				 // SMD exporter
+				 auto saveFileDialog1 = gcnew SaveFileDialog();
+				 saveFileDialog1->FileName = name;
 				 saveFileDialog1->Filter = "SMD model|*.smd";
 				 saveFileDialog1->RestoreDirectory = true;
 
 				 if (saveFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK)
 				 {
-					 FileStream^ fs = File::OpenRead(openFileDialog1->FileName);
-					 BinaryReader^ br = gcnew BinaryReader(fs);
-					 StreamWriter^ sw = gcnew StreamWriter(saveFileDialog1->FileName);
+					 auto fs = File::OpenRead(openFileDialog1->FileName);
+					 auto br = gcnew BinaryReader(fs);
+					 auto sw = gcnew StreamWriter(saveFileDialog1->FileName);
 
-					 ushort Scale = ushort::Parse(toolStripTextBox1->Text);
+					 auto scale = ushort::Parse(toolStripTextBox1->Text);
 
 					 sw->WriteLine("version 1");
 
 					 //==================================================================
-					 // Иерархия костей.
+					 // Nodes tree.
 					 //==================================================================
 
-					 SkeletonReturn SkeletonReturn1 = ReadSkeleton(openFileDialog1->FileName, 16);
+					 auto skeleton_return = ReadSkeleton(openFileDialog1->FileName, 16);
 
 					 sw->WriteLine("nodes");					 
 
-					 for (ushort i = 0; i < SkeletonReturn1.NodesCount; i++) // 
+					 for (ushort i = 0; i < skeleton_return.NodesCount; i++) // 
 					 {
-						 String^ NodeName = gcnew String(SkeletonReturn1.NodeName[i]);
-						 sw->WriteLine(i + " " + "\"" + NodeName + "\"" + " " + SkeletonReturn1.ParentNodeArray[i]); //" \"root\"  child+1
+						 auto node_name = gcnew String(skeleton_return.NodeName[i]);
+						 sw->WriteLine(i + " " + "\"" + node_name + "\"" + " " + skeleton_return.ParentNodeArray[i]); //" \"root\"  child+1
 					 }						 
 
 					 sw->WriteLine("end");
 
 					 //==================================================================
-					 // Позиция костей.
+					 // Position of nodes.
 					 //==================================================================
 					 sw->WriteLine("skeleton");
 					 sw->WriteLine("time 0");		
 
 					 float structure[500][6];
 					 std::string names[500];
-					 if (replaceSkelToolStripMenuItem->Checked == true) // Если не отмечена анимация, экспортируется оригинальный скелет.
+					 if (replaceSkelToolStripMenuItem->Checked == true) // If animation is not selected, exporting original skeleton.
 					 {		
-						 array<Char>^ TrimChars2 = { '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-						 String^ Name2 = Name->TrimEnd(TrimChars2);
+						 array<Char>^ trim_chars2 = { '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+						 auto name2 = name->TrimEnd(trim_chars2);
 
-						 String^ AnimName = gcnew String(Path + "\\" + Name2 + ".obj.ema");
-						 m_D3DWrap->WrapSetup(AnimName, 0);
+						 auto anim_name = gcnew String(path + "\\" + name2 + ".obj.ema");
+						 m_D3DWrap->WrapSetup(anim_name, 0);
 						 m_D3DWrap->WrapUpdate(structure, names, "NONE", 0);
 					 }
 
-					 for (ushort i = 0; i < SkeletonReturn1.NodesCount; i++) // 
+					 for (ushort i = 0; i < skeleton_return.NodesCount; i++) // 
 					 {
-						 CultureInfo^ enUS = gcnew CultureInfo("en-US");						 
+						 auto en_us = gcnew CultureInfo("en-US");
 
-						 float  tx = *((float*)(SkeletonReturn1.Matrix4x4[i] + 48)); // 12
-						 float  ty = *((float*)(SkeletonReturn1.Matrix4x4[i] + 56)); // 14
-						 float  tz = -*((float*)(SkeletonReturn1.Matrix4x4[i] + 52)); // 13
+						 auto tx = *reinterpret_cast<float*>(skeleton_return.Matrix4x4[i] + 48); // 12
+						 auto ty = *reinterpret_cast<float*>(skeleton_return.Matrix4x4[i] + 56); // 14
+						 auto tz = -*reinterpret_cast<float*>(skeleton_return.Matrix4x4[i] + 52); // 13
 
-						 float rx = atan2(-*((float*)(SkeletonReturn1.Matrix4x4[i] + 36)), *((float*)(SkeletonReturn1.Matrix4x4[i] + 20))); // 9, 5
-						 float ry = -atan2(-*((float*)(SkeletonReturn1.Matrix4x4[i] + 8)), *((float*)(SkeletonReturn1.Matrix4x4[i]))); // 2, 0						 
-						 float rz = asin(*((float*)(SkeletonReturn1.Matrix4x4[i] + 4))); // 1
+						 auto rx = atan2(-*reinterpret_cast<float*>(skeleton_return.Matrix4x4[i] + 36), *reinterpret_cast<float*>(skeleton_return.Matrix4x4[i] + 20)); // 9, 5
+						 auto ry = -atan2(-*reinterpret_cast<float*>(skeleton_return.Matrix4x4[i] + 8), *reinterpret_cast<float*>(skeleton_return.Matrix4x4[i])); // 2, 0						 
+						 auto rz = asin(*reinterpret_cast<float*>(skeleton_return.Matrix4x4[i] + 4)); // 1
 
-						 if (replaceSkelToolStripMenuItem->Checked == true) // Если не отмечена, экспортируется оригинальный скелет.
+						 if (replaceSkelToolStripMenuItem->Checked == true) // If not checked, exporting original skeleton.
 						 {
-							 String^ NodeName = gcnew String(SkeletonReturn1.NodeName[i]);// Имя текущего нода.	
+							 auto node_name = gcnew String(skeleton_return.NodeName[i]); // Name of current node.	
 
-							 array<Char>^ TrimChars2 = { '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-							 String^ Name2 = Name->TrimEnd(TrimChars2);
-							 SkeletonReturn SkeletonReturn2 = ReadSkeleton(Path + "\\" + Name2 + ".obj.ema", 12);
+							 array<Char>^ trim_chars2 = { '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+							 auto name2 = name->TrimEnd(trim_chars2);
+							 auto skeleton_return2 = ReadSkeleton(path + "\\" + name2 + ".obj.ema", 12);
 
-							 for (ushort Nodes = 0; Nodes < SkeletonReturn2.NodesCount; Nodes++) // Замена значений текущего нода значениями из реф. скелета анимации.
+							 for (ushort nodes = 0; nodes < skeleton_return2.NodesCount; nodes++) // Replacing values of current node with values of reference skeleton from animation.
 							 {
-								 std::string name(names[Nodes]);
-								 String^ nameclr = gcnew String(name.c_str());
+								 auto name_temp(names[nodes]);
+								 auto nameclr = gcnew String(name_temp.c_str());
 
-								 if (nameclr == NodeName)
+								 if (nameclr == node_name)
 								 {
-									 tx = structure[Nodes][0];
-									 ty = structure[Nodes][1];
-									 tz = structure[Nodes][2];
-									 rx = structure[Nodes][3];
-									 rz = structure[Nodes][4];
+									 tx = structure[nodes][0];
+									 ty = structure[nodes][1];
+									 tz = structure[nodes][2];
+									 rx = structure[nodes][3];
+									 rz = structure[nodes][4];
 
 									 if (starPoseFixToolStripMenuItem->Checked == true)
 									 {
 										 if (nameclr == "RLegRoot")
-											 ry = -(float)0.610842;
+											 ry = -float(0.610842);
 										 else if (nameclr == "LLegRoot")
-											 ry = (float)0.610842;
+											 ry = float(0.610842);
 										 else 
-											 ry = structure[Nodes][5];
+											 ry = structure[nodes][5];
 									 }
 									 else
-										ry = structure[Nodes][5];
+										ry = structure[nodes][5];
 								 }
 							 }
 						 }	
 						 else
 						 {
-							 if (i == 0) // Нужно наклонить.
-								 rx = (float)1.570796;
+							 if (i == 0) // Need to rotate.
+								 rx = float(1.570796);
 						 }												
 
 						 sw->WriteLine(i + " "
-							 + (-tx * Scale).ToString("F6", enUS) + " "
-							 + (ty * Scale).ToString("F6", enUS) + " "
-							 + (tz * Scale).ToString("F6", enUS) + " "							 
+							 + (-tx * scale).ToString("F6", en_us) + " "
+							 + (ty * scale).ToString("F6", en_us) + " "
+							 + (tz * scale).ToString("F6", en_us) + " "							 
 
-							 + rx.ToString("F6", enUS) + " "
-							 + (-rz).ToString("F6", enUS) + " "
-							 + (-ry).ToString("F6", enUS) );
+							 + rx.ToString("F6", en_us) + " "
+							 + (-rz).ToString("F6", en_us) + " "
+							 + (-ry).ToString("F6", en_us) );
 					 }
 					 sw->WriteLine("end");
 
 					 //==================================================================
-					 // Треугольники
+					 // Triangles
 					 //==================================================================
-					 fs->Position = 32; // Пропуск 32 байт на позицию о кол-ве EMG.
-					 ushort EMGcount = br->ReadInt16();
-					 fs->Position = 32 + 8; // Позиция списка сдвигов на все EMG.
+					 fs->Position = 32; // Skipping 32 bytes to position about EMG ammount.
+					 ushort EMG_count = br->ReadInt16();
+					 fs->Position = 32 + 8; // Position of "offsets list" of every EMG.
 
-					 array<int>^ EMGoffsets = gcnew array<int>(EMGcount);
-					 array<EMGReturn>^ result = gcnew array<EMGReturn>(EMGcount);
+					 auto EMG_offsets = gcnew array<int>(EMG_count);
+					 auto result = gcnew array<EMGReturn>(EMG_count);
 					 
 					 sw->WriteLine("triangles");
 
-					 for (Byte CurrentEMG = 0; CurrentEMG < EMGcount; CurrentEMG++)
+					 for (auto current_EMG = 0; current_EMG < EMG_count; current_EMG++)
 					 {
-						 EMGoffsets[CurrentEMG] = br->ReadInt32(); // Заполнение массива списком.
-						 result[CurrentEMG] = ReadEMG(openFileDialog1->FileName, 32 + EMGoffsets[CurrentEMG] + 16); // Заполнение массива данными о каждом EMG.
+						 EMG_offsets[current_EMG] = br->ReadInt32(); // Filling array with list.
+						 result[current_EMG] = ReadEMG(openFileDialog1->FileName, 32 + EMG_offsets[current_EMG] + 16); // Filling array with data about each EMG.
 
-						 if (treeView1->Nodes[0]->Nodes[CurrentEMG]->Checked)
+						 if (treeView1->Nodes[0]->Nodes[current_EMG]->Checked)
 						 {
-							 for (Byte CurrentSubmodel = 0; CurrentSubmodel < result[CurrentEMG].SubmodelCount; CurrentSubmodel++)
+							 for (auto current_submodel = 0; current_submodel < result[current_EMG].SubmodelCount; current_submodel++)
 							 {
-								 for (ushort i = 0; i < result[CurrentEMG].IndexCount[CurrentSubmodel] - 2; i++)
+								 for (ushort i = 0; i < result[current_EMG].IndexCount[current_submodel] - 2; i++)
 								 {
-									 CultureInfo^ enUS = gcnew CultureInfo("en-US");
+									 auto en_us = gcnew CultureInfo("en-US");
 
 									 int a, b, c;
 
-									 String^ Texture;
+									 String^ texture;
 									 if (MergeSubmodelsToolStripMenuItem->Checked)
-										 Texture = Name + "_" + (result[CurrentEMG].DDSid[CurrentSubmodel] + 1) + ".dds";
+										 texture = name + "_" + (result[current_EMG].DDSid[current_submodel] + 1) + ".dds";
 									 else
-										 Texture = CurrentEMG + "_" + Name + "_" + (result[CurrentEMG].DDSid[CurrentSubmodel] + 1) + ".dds";
+										 texture = current_EMG + "_" + name + "_" + (result[current_EMG].DDSid[current_submodel] + 1) + ".dds";
 
 									 if (i % 2 == 0)
 									 {
-										 a = result[CurrentEMG].IndiceArray[CurrentSubmodel][i + 0];
-										 b = result[CurrentEMG].IndiceArray[CurrentSubmodel][i + 1];
-										 c = result[CurrentEMG].IndiceArray[CurrentSubmodel][i + 2];
+										 a = result[current_EMG].IndiceArray[current_submodel][i + 0];
+										 b = result[current_EMG].IndiceArray[current_submodel][i + 1];
+										 c = result[current_EMG].IndiceArray[current_submodel][i + 2];
 
-										 if (a != b && b != c) // пропуск дегенеративных 
+										 if (a != b && b != c) // skipping degenerate triangle
 										 {
-											 sw->WriteLine(Texture);
+											 sw->WriteLine(texture);
 
 											 for (char x = 2; x > -1; x--)
 											 {
-												 int index = result[CurrentEMG].IndiceArray[CurrentSubmodel][i + x];
+												 int index = result[current_EMG].IndiceArray[current_submodel][i + x];
 												 sw->Write("0 "
 													 // PosX PosY PosZ
-													 + (-*((float*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray)) * Scale).ToString("F6", enUS) + " "
-													 + (*((float*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray + 4)) * Scale).ToString("F6", enUS) + " "
-													 + (*((float*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray + 8)) * Scale).ToString("F6", enUS) + " "
+													 + (-*reinterpret_cast<float*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray) * scale).ToString("F6", en_us) + " "
+													 + (*reinterpret_cast<float*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray + 4) * scale).ToString("F6", en_us) + " "
+													 + (*reinterpret_cast<float*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray + 8) * scale).ToString("F6", en_us) + " "
 													 // NormX NormY NormZ
-													 + (*((float*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray + 12))).ToString("F6", enUS) + " "
-													 + (*((float*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray + 16))).ToString("F6", enUS) + " "
-													 + (*((float*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray + 20))).ToString("F6", enUS) + " "
+													 + (*reinterpret_cast<float*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray + 12)).ToString("F6", en_us) + " "
+													 + (*reinterpret_cast<float*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray + 16)).ToString("F6", en_us) + " "
+													 + (*reinterpret_cast<float*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray + 20)).ToString("F6", en_us) + " "
 													 // U V
-													 + (*((float*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray + 24))).ToString("F6", enUS) + " "
-													 + (-*((float*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray + 28))).ToString("F6", enUS) + " ");												 
+													 + (*reinterpret_cast<float*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray + 24)).ToString("F6", en_us) + " "
+													 + (-*reinterpret_cast<float*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray + 28)).ToString("F6", en_us) + " ");												 
 												 
-												 Byte BoneID[4];
-												 for (Byte Num = 0; Num < 4; Num++)
-													 BoneID[Num] = *((Byte*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray + 48 + Num));
-												 float Weight[3];
-												 for (Byte Num = 0; Num < 3; Num++)
-													 Weight[Num] = *((float*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray + 52 + (Num*4)));
+												 byte BoneID[4];
+												 for (byte num = 0; num < 4; num++)
+													 BoneID[num] = *static_cast<byte*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray + 48 + num);
+												 float weight[3];
+												 for (byte num = 0; num < 3; num++)
+													 weight[num] = *reinterpret_cast<float*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray + 52 + (num * 4));
 
-												 if (Weight[0] != 0 && Weight[1] == 0) // if 1
-													 sw->WriteLine("1 " + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[0]].ToString() + " 1");
-												 else if (Weight[0] != 0 && Weight[1] != 0 && Weight[2] == 0) // if 2
-													 sw->WriteLine("2 " + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[0]].ToString() + " "
-													 + Weight[0].ToString("F6", enUS) + " "
-													 + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[1]].ToString() + " "
-													 + Weight[1].ToString("F6", enUS));
-												 else if (Weight[0] + Weight[1] + Weight[2] > 0.999) // if 3
-													 sw->WriteLine("3 " + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[0]].ToString() + " "
-													 + Weight[0].ToString("F6", enUS) + " "
-													 + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[1]].ToString() + " "
-													 + Weight[1].ToString("F6", enUS) + " "
-													 + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[2]].ToString() + " "
-													 + Weight[2].ToString("F6", enUS));
+												 if (weight[0] != 0 && weight[1] == 0) // if 1
+													 sw->WriteLine("1 " + result[current_EMG].NodesArray[current_submodel][BoneID[0]].ToString() + " 1");
+												 else if (weight[0] != 0 && weight[1] != 0 && weight[2] == 0) // if 2
+													 sw->WriteLine("2 " + result[current_EMG].NodesArray[current_submodel][BoneID[0]].ToString() + " "
+													 + weight[0].ToString("F6", en_us) + " "
+													 + result[current_EMG].NodesArray[current_submodel][BoneID[1]].ToString() + " "
+													 + weight[1].ToString("F6", en_us));
+												 else if (weight[0] + weight[1] + weight[2] > 0.999) // if 3
+													 sw->WriteLine("3 " + result[current_EMG].NodesArray[current_submodel][BoneID[0]].ToString() + " "
+													 + weight[0].ToString("F6", en_us) + " "
+													 + result[current_EMG].NodesArray[current_submodel][BoneID[1]].ToString() + " "
+													 + weight[1].ToString("F6", en_us) + " "
+													 + result[current_EMG].NodesArray[current_submodel][BoneID[2]].ToString() + " "
+													 + weight[2].ToString("F6", en_us));
 												 else // if 4
-													 sw->WriteLine("4 " + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[0]].ToString() + " "
-													 + Weight[0].ToString("F6", enUS) + " "
-													 + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[1]].ToString() + " "
-													 + Weight[1].ToString("F6", enUS) + " "
-													 + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[2]].ToString() + " "
-													 + Weight[2].ToString("F6", enUS) + " "
-													 + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[3]].ToString() + " "
-													 + (1 - (Weight[0] + Weight[1] + Weight[2])).ToString("F6", enUS));
+													 sw->WriteLine("4 " + result[current_EMG].NodesArray[current_submodel][BoneID[0]].ToString() + " "
+													 + weight[0].ToString("F6", en_us) + " "
+													 + result[current_EMG].NodesArray[current_submodel][BoneID[1]].ToString() + " "
+													 + weight[1].ToString("F6", en_us) + " "
+													 + result[current_EMG].NodesArray[current_submodel][BoneID[2]].ToString() + " "
+													 + weight[2].ToString("F6", en_us) + " "
+													 + result[current_EMG].NodesArray[current_submodel][BoneID[3]].ToString() + " "
+													 + (1 - (weight[0] + weight[1] + weight[2])).ToString("F6", en_us));
 											 }
 										 }
 									 }
 									 else
 									 {
-										 a = result[CurrentEMG].IndiceArray[CurrentSubmodel][i + 2];
-										 b = result[CurrentEMG].IndiceArray[CurrentSubmodel][i + 1];
-										 c = result[CurrentEMG].IndiceArray[CurrentSubmodel][i + 0];
+										 a = result[current_EMG].IndiceArray[current_submodel][i + 2];
+										 b = result[current_EMG].IndiceArray[current_submodel][i + 1];
+										 c = result[current_EMG].IndiceArray[current_submodel][i + 0];
 
 										 if (a != b && b != c)
 										 {
-											 sw->WriteLine(Texture);
+											 sw->WriteLine(texture);
 
 											 for (char x = 0; x < 3; x++)
 											 {
-												 int index = result[CurrentEMG].IndiceArray[CurrentSubmodel][i + x];
+												 int index = result[current_EMG].IndiceArray[current_submodel][i + x];
 												 sw->Write("0 "
 													 // PosX PosY PosZ
-													 + (-*((float*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray)) * Scale).ToString("F6", enUS) + " "
-													 + (*((float*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray + 4)) * Scale).ToString("F6", enUS) + " "
-													 + (*((float*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray + 8)) * Scale).ToString("F6", enUS) + " "
+													 + (-*reinterpret_cast<float*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray) * scale).ToString("F6", en_us) + " "
+													 + (*reinterpret_cast<float*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray + 4) * scale).ToString("F6", en_us) + " "
+													 + (*reinterpret_cast<float*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray + 8) * scale).ToString("F6", en_us) + " "
 													 // NormX NormY NormZ
-													 + (*((float*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray + 12))).ToString("F6", enUS) + " "
-													 + (*((float*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray + 16))).ToString("F6", enUS) + " "
-													 + (*((float*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray + 20))).ToString("F6", enUS) + " "
+													 + (*reinterpret_cast<float*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray + 12)).ToString("F6", en_us) + " "
+													 + (*reinterpret_cast<float*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray + 16)).ToString("F6", en_us) + " "
+													 + (*reinterpret_cast<float*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray + 20)).ToString("F6", en_us) + " "
 													 // U V
-													 + (*((float*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray + 24))).ToString("F6", enUS) + " "
-													 + (-*((float*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray + 28))).ToString("F6", enUS) + " ");
+													 + (*reinterpret_cast<float*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray + 24)).ToString("F6", en_us) + " "
+													 + (-*reinterpret_cast<float*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray + 28)).ToString("F6", en_us) + " ");
 
-												 Byte BoneID[4];
-												 for (Byte Num = 0; Num < 4; Num++)
-													 BoneID[Num] = *((Byte*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray + 48 + Num));
-												 float Weight[3];
-												 for (Byte Num = 0; Num < 3; Num++)
-													 Weight[Num] = *((float*)(index * result[CurrentEMG].VertexSize + result[CurrentEMG].VertexArray + 52 + (Num * 4)));
+												 byte BoneID[4];
+												 for (byte num = 0; num < 4; num++)
+													 BoneID[num] = *static_cast<byte*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray + 48 + num);
+												 float weight[3];
+												 for (byte num = 0; num < 3; num++)
+													 weight[num] = *reinterpret_cast<float*>(index * result[current_EMG].VertexSize + result[current_EMG].VertexArray + 52 + (num * 4));
 
-												 if (Weight[0] != 0 && Weight[1] == 0)
-													 sw->WriteLine("1 " + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[0]].ToString() + " 1");
-												 else if (Weight[0] != 0 && Weight[1] != 0 && Weight[2] == 0)
-													 sw->WriteLine("2 " + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[0]].ToString() + " "
-													 + Weight[0].ToString("F6", enUS) + " "
-													 + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[1]].ToString() + " "
-													 + Weight[1].ToString("F6", enUS));
-												 else if (Weight[0] + Weight[1] + Weight[2] > 0.999)
-													 sw->WriteLine("3 " + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[0]].ToString() + " "
-													 + Weight[0].ToString("F6", enUS) + " "
-													 + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[1]].ToString() + " "
-													 + Weight[1].ToString("F6", enUS) + " "
-													 + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[2]].ToString() + " "
-													 + Weight[2].ToString("F6", enUS));
+												 if (weight[0] != 0 && weight[1] == 0)
+													 sw->WriteLine("1 " + result[current_EMG].NodesArray[current_submodel][BoneID[0]].ToString() + " 1");
+												 else if (weight[0] != 0 && weight[1] != 0 && weight[2] == 0)
+													 sw->WriteLine("2 " + result[current_EMG].NodesArray[current_submodel][BoneID[0]].ToString() + " "
+													 + weight[0].ToString("F6", en_us) + " "
+													 + result[current_EMG].NodesArray[current_submodel][BoneID[1]].ToString() + " "
+													 + weight[1].ToString("F6", en_us));
+												 else if (weight[0] + weight[1] + weight[2] > 0.999)
+													 sw->WriteLine("3 " + result[current_EMG].NodesArray[current_submodel][BoneID[0]].ToString() + " "
+													 + weight[0].ToString("F6", en_us) + " "
+													 + result[current_EMG].NodesArray[current_submodel][BoneID[1]].ToString() + " "
+													 + weight[1].ToString("F6", en_us) + " "
+													 + result[current_EMG].NodesArray[current_submodel][BoneID[2]].ToString() + " "
+													 + weight[2].ToString("F6", en_us));
 												 else 
-													 sw->WriteLine("4 " + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[0]].ToString() + " "
-													 + Weight[0].ToString("F6", enUS) + " "
-													 + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[1]].ToString() + " "
-													 + Weight[1].ToString("F6", enUS) + " "
-													 + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[2]].ToString() + " "
-													 + Weight[2].ToString("F6", enUS) + " "
-													 + result[CurrentEMG].NodesArray[CurrentSubmodel][BoneID[3]].ToString() + " "
-													 + (1 - (Weight[0] + Weight[1] + Weight[2])).ToString("F6", enUS));
+													 sw->WriteLine("4 " + result[current_EMG].NodesArray[current_submodel][BoneID[0]].ToString() + " "
+													 + weight[0].ToString("F6", en_us) + " "
+													 + result[current_EMG].NodesArray[current_submodel][BoneID[1]].ToString() + " "
+													 + weight[1].ToString("F6", en_us) + " "
+													 + result[current_EMG].NodesArray[current_submodel][BoneID[2]].ToString() + " "
+													 + weight[2].ToString("F6", en_us) + " "
+													 + result[current_EMG].NodesArray[current_submodel][BoneID[3]].ToString() + " "
+													 + (1 - (weight[0] + weight[1] + weight[2])).ToString("F6", en_us));
 											 }
 										 }
 									 }
@@ -937,32 +935,32 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 				 }
 			 }
 
-			 if(treeView1->Nodes[1]->Checked == true) // текстуры
+			 if(treeView1->Nodes[1]->Checked == true) // textures
 			 {
-				 SaveFileDialog^ saveFileDialog1 = gcnew SaveFileDialog();
-				 saveFileDialog1->FileName = Name;
+				 auto saveFileDialog1 = gcnew SaveFileDialog();
+				 saveFileDialog1->FileName = name;
 				 saveFileDialog1->Filter = "DDS Texture|*.dds";
 				 saveFileDialog1->RestoreDirectory = true;
 
 				 if (saveFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK)
 				 {		 
-					 for (Byte Node = 0; Node < treeView1->Nodes[1]->LastNode->Index; Node++)
+					 for (auto node = 0; node < treeView1->Nodes[1]->LastNode->Index; node++)
 					 {
-						 if (treeView1->Nodes[1]->Nodes[Node]->Checked)
+						 if (treeView1->Nodes[1]->Nodes[node]->Checked)
 						 {
 							 EMBReturn result;
-							 String^ Temp = Path + "\\" + treeView1->Nodes[1]->Nodes[Node]->Text;
-							 result = ReadEMB(Temp);
+							 auto temp = path + "\\" + treeView1->Nodes[1]->Nodes[node]->Text;
+							 result = ReadEMB(temp);
 
-							 String^ tempName = treeView1->Nodes[1]->Nodes[Node]->Text;
-							 array<System::String^>^ name = tempName->Split('.');
-							 array<System::String^>^ nameArr = name[0]->Split('_');
+							 auto temp_name = treeView1->Nodes[1]->Nodes[node]->Text;
+							 auto name2 = temp_name->Split('.');
+							 auto name_arr = name2[0]->Split('_');
 
-							 for (Byte i = 0; i < result.DDScount; i++)
+							 for (auto i = 0; i < result.DDScount; i++)
 							 {
-								 String^ OutputPath = Path::GetDirectoryName(saveFileDialog1->FileName);
-								 FileStream^ fs = gcnew FileStream(OutputPath + "\\" + nameArr[0] + "_" + nameArr[1] + "_" + (i+1) + "_" + nameArr[2] + ".dds", FileMode::Create, FileAccess::ReadWrite);
-								 BinaryWriter^ br = gcnew BinaryWriter(fs);
+								 auto output_path = Path::GetDirectoryName(saveFileDialog1->FileName);
+								 auto fs = gcnew FileStream(output_path + "\\" + name_arr[0] + "_" + name_arr[1] + "_" + (i+1) + "_" + name_arr[2] + ".dds", FileMode::Create, FileAccess::ReadWrite);
+								 auto br = gcnew BinaryWriter(fs);
 
 								 for (ulong a = 0; a < result.DDSsize[i]; a++)
 									 br->Write(result.DDSArray[i][a]);
@@ -977,13 +975,13 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 					 if (treeView1->Nodes[1]->Nodes[treeView1->Nodes[1]->LastNode->Index]->Checked)
 					 {
 						 EMBReturn result;
-						 result = ReadEMB(Path + "\\" + Name + ".nml.emb");
+						 result = ReadEMB(path + "\\" + name + ".nml.emb");
 
-						 for (Byte i = 0; i < result.DDScount; i++)
+						 for (auto i = 0; i < result.DDScount; i++)
 						 {
-							 String^ OutputPath = Path::GetDirectoryName(saveFileDialog1->FileName);
-							 FileStream^ fs = gcnew FileStream(OutputPath + "\\" + Name + "_" + i + ".nml.dds", FileMode::Create, FileAccess::ReadWrite);
-							 BinaryWriter^ br = gcnew BinaryWriter(fs);
+							 auto output_path = Path::GetDirectoryName(saveFileDialog1->FileName);
+							 auto fs = gcnew FileStream(output_path + "\\" + name + "_" + i + ".nml.dds", FileMode::Create, FileAccess::ReadWrite);
+							 auto br = gcnew BinaryWriter(fs);
 
 							 for (ulong a = 0; a < result.DDSsize[i]; a++)
 								 br->Write(result.DDSArray[i][a]);
@@ -996,104 +994,106 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 				 }
 			 }
 
-			 if(treeView1->Nodes[2]->Checked == true) // анимации
+			 if(treeView1->Nodes[2]->Checked == true) // animations
 			 {
-				 SaveFileDialog^ saveFileDialog1 = gcnew SaveFileDialog();
-				 array<Char>^ TrimChars2 = { '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-				 String^ Name2 = Name->TrimEnd(TrimChars2);
-				 saveFileDialog1->FileName = Name2 + "_anim";
+				 auto saveFileDialog1 = gcnew SaveFileDialog();
+				 array<Char>^ trim_chars2 = { '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+				 auto name2 = name->TrimEnd(trim_chars2);
+				 saveFileDialog1->FileName = name2 + "_anim";
 				 saveFileDialog1->Filter = "SMD animation|*.smd";
 				 saveFileDialog1->RestoreDirectory = true;
 
 				 if (saveFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK)
 				 {
-					 ushort AnimationID;
-					 IEnumerator^ myEnum = treeView1->Nodes[2]->Nodes->GetEnumerator();
+					 ushort animation_id;
+					 auto my_enum = treeView1->Nodes[2]->Nodes->GetEnumerator();
 
-					 String^ AnimName = gcnew String(Path + "\\" + Name2 + ".obj.ema");
-					 m_D3DWrap->WrapSetup(AnimName, 0);
+					 auto anim_name = gcnew String(path + "\\" + name2 + ".obj.ema");
+					 m_D3DWrap->WrapSetup(anim_name, 0);
 
-					 while (myEnum->MoveNext())
+					 while (my_enum->MoveNext())
 					 {
-						 TreeNode^ node = safe_cast<TreeNode^>(myEnum->Current);
+						 auto node = safe_cast<TreeNode^>(my_enum->Current);
 						 if (node->Checked)
 						 {
-							 AnimationID = node->Index;
+							 animation_id = node->Index;
 
-							 String^ OutputPath = Path::GetDirectoryName(saveFileDialog1->FileName);
+							 auto output_path = Path::GetDirectoryName(saveFileDialog1->FileName);
 
-							 StreamWriter^ sw = gcnew StreamWriter(OutputPath + "\\" + node->Text + ".smd");
+							 auto sw = gcnew StreamWriter(output_path + "\\" + node->Text + ".smd");
 
-							 CultureInfo^ enUS = gcnew CultureInfo("en-US");
+							 auto en_us = gcnew CultureInfo("en-US");
 
-							 ushort Scale = ushort::Parse(toolStripTextBox1->Text);
+							 auto scale = ushort::Parse(toolStripTextBox1->Text);
 
 							 sw->WriteLine("version 1");
 
 							 //==================================================================
-							 // Иерархия костей.
+							 // Nodes tree.
 							 //==================================================================					 
 
-							 SkeletonReturn SkeletonReturn1 = ReadSkeleton(Path + "\\" + Name2 + ".obj.ema", 12);
+							 auto skeleton_return1 = ReadSkeleton(path + "\\" + name2 + ".obj.ema", 12);
 
 							 sw->WriteLine("nodes");
 
-							 for (ushort i = 0; i < SkeletonReturn1.NodesCount; i++) // 
+							 for (ushort i = 0; i < skeleton_return1.NodesCount; i++) // 
 							 {
-								 String^ NodeName = gcnew String(SkeletonReturn1.NodeName[i]);
-								 sw->WriteLine(i + " " + "\"" + NodeName + "\"" + " " + SkeletonReturn1.ParentNodeArray[i]); //" \"root\"  child+1
+								 auto node_name = gcnew String(skeleton_return1.NodeName[i]);
+								 sw->WriteLine(i + " " + "\"" + node_name + "\"" + " " + skeleton_return1.ParentNodeArray[i]); //" \"root\"  child+1
+								 delete node_name;
 							 }
 
 							 sw->WriteLine("end");
 
 							 //==================================================================
-							 // Позиция костей.
+							 // Nodes position.
 							 //==================================================================
 
 							 sw->WriteLine("skeleton");
 
-							 EMAReturn result = ReadEMA(Path + "\\" + Name2 + ".obj.ema");
+							 auto result = ReadEMA(path + "\\" + name2 + ".obj.ema");
 
-							 String^ AnimationName = gcnew String(result.AnimationName[AnimationID]);
-							 int Duration = result.Duration[AnimationID];
+							 auto animation_name = gcnew String(result.AnimationName[animation_id]);
+							 int duration = result.Duration[animation_id];
 
 							 float structure[500][6];
 							 std::string names[500];	
 
 							 sw->WriteLine("time 0");
 							 m_D3DWrap->WrapUpdate(structure, names, "ref", 0);
-							 for (int i = 0; i < SkeletonReturn1.NodesCount; i++)
+							 for (auto i = 0; i < skeleton_return1.NodesCount; i++)
 							 {
 								 if (i == 0 )
 									 sw->WriteLine("0 0 0 0 0 0 0"); //1.570796 3.141592
 								 else if (i != 0)
 								 {
-									 sw->Write(i + " " + (-structure[i][0] * Scale).ToString("F6", enUS) + " " + (structure[i][1] * Scale).ToString("F6", enUS) + " " + (structure[i][2] * Scale).ToString("F6", enUS) + " ");
-									 sw->WriteLine(structure[i][3].ToString("F6", enUS) + " " + (-structure[i][4]).ToString("F6", enUS) + " " + (-structure[i][5]).ToString("F6", enUS));
+									 sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
+									 sw->WriteLine(structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us));
 								 }
 							 }
 
-							 for (ushort time = 0; time < Duration; time++)
+							 for (ushort time = 0; time < duration; time++)
 							 {
 								 sw->WriteLine("time " + (time + 1));
-								 m_D3DWrap->WrapUpdate(structure, names, AnimationName, time);
-								 for (int i = 0; i < SkeletonReturn1.NodesCount; i++)
+								 m_D3DWrap->WrapUpdate(structure, names, animation_name, time);
+								 for (auto i = 0; i < skeleton_return1.NodesCount; i++)
 								 {
 									 if (i == 0 && time == 0)
 										 sw->WriteLine("0 0 0 0 0 0 0"); //1.570796 3.141592
 									 else if (i != 0)
 									 {
-										 std::string name(names[i]);
-										 String^ nameclr = gcnew String(name.c_str());
+										 auto name3(names[i]);
+										 auto nameclr = gcnew String(name3.c_str());
 
 										 if (nameclr == "RLegRoot" || nameclr == "LLegRoot" || nameclr == "LArmRoot" || nameclr == "RArmRoot")
-										 {											 
-										 }	
+										 { }	
 										 else
 										 {
-											 sw->Write(i + " " + (-structure[i][0] * Scale).ToString("F6", enUS) + " " + (structure[i][1] * Scale).ToString("F6", enUS) + " " + (structure[i][2] * Scale).ToString("F6", enUS) + " ");
-											 sw->WriteLine(structure[i][3].ToString("F6", enUS) + " " + (-structure[i][4]).ToString("F6", enUS) + " " + (-structure[i][5]).ToString("F6", enUS));
+											 sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
+											 sw->WriteLine(structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us));
 										 }
+
+										 delete nameclr;
 									 }
 								 }
 							 }
@@ -1111,34 +1111,32 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 }
 private: System::Void treeView1_AfterCheck(System::Object^  sender, System::Windows::Forms::TreeViewEventArgs^  e) {
 			 //==================================================================
-			 // Блок взаимодейсвия нодов.
 			 treeView1->BeginUpdate();
 			 if (e->Action != TreeViewAction::Unknown)
-			 {
-				 // Выделение или снятие выделения членов, если отмечен коренной нод.				 			 
+			 {			 			 
 				 if (e->Node->Nodes->Count > 0)
-				 {			
-					 IEnumerator^ myEnum = e->Node->Nodes->GetEnumerator();
-					 while (myEnum->MoveNext())
-					 {		
-						 TreeNode^ node = safe_cast<TreeNode^>(myEnum->Current);
+				 {
+					 auto my_enum = e->Node->Nodes->GetEnumerator();
+					 while (my_enum->MoveNext())
+					 {
+						 const auto node = safe_cast<TreeNode^>(my_enum->Current);
 						 node->Checked = e->Node->Checked;
 					 }						 
 				 }
-				 // Влияние членов на отметку коренного нода.
+
 				 if (e->Node->Parent != nullptr && e->Node->Checked)
 					 e->Node->Parent->Checked = true;
 				 else if (e->Node->Parent != nullptr && !e->Node->Checked)
 				 {
-					 ushort i = 0; // Подсчёт отмеченных нодов.
-					 IEnumerator^ myEnum = e->Node->Parent->Nodes->GetEnumerator();
-					 while (myEnum->MoveNext())
+					 ushort i = 0; // Counting selected nodes.
+					 auto my_enum = e->Node->Parent->Nodes->GetEnumerator();
+					 while (my_enum->MoveNext())
 					 {
-						 TreeNode^ node = safe_cast<TreeNode^>(myEnum->Current);
+						 const auto node = safe_cast<TreeNode^>(my_enum->Current);
 						 if (node->Checked)
 							 i++;
 					 }
-					 if (i == 0) // Если 0, то снимаем галочку с родительского.
+					 if (i == 0) // If 0, then uncheck parent.
 						 e->Node->Parent->Checked = false;
 				 }
 			 }	
@@ -1147,77 +1145,77 @@ private: System::Void treeView1_AfterCheck(System::Object^  sender, System::Wind
 
 			 if (e->Action != TreeViewAction::Unknown)
 			 {
-				 if (e->Node->Name == "Node0") // Если отмечен галочкой нод "Mesh".
+				 if (e->Node->Name == "Node0") // If "Mesh" node checked.
 				 {
-					 if (e->Node->Checked) // Полное отображение модели.
+					 if (e->Node->Checked) // Show full model.
 					 {
-						 FileStream^ fs = File::OpenRead(openFileDialog1->FileName);
-						 BinaryReader^ br = gcnew BinaryReader(fs);
+						 auto fs = File::OpenRead(openFileDialog1->FileName);
+						 auto br = gcnew BinaryReader(fs);
 
-						 fs->Position = 32; // Пропуск 32 байт на позицию о кол-ве EMG.
+						 fs->Position = 32; // Skipping 32 bytes to position about EMG ammount.
 						 ushort EMGcount = br->ReadInt16();
-						 fs->Position = 32 + 8; // Позиция списка сдвигов на все EMG.
+						 fs->Position = 32 + 8; // Position of "offsets list" of every EMG.
 
-						 array<unsigned int>^ EMGoffsets = gcnew array<unsigned int>(EMGcount);
-						 array<EMGReturn>^ result = gcnew array<EMGReturn>(EMGcount);
+						 auto EMGoffsets = gcnew array<unsigned int>(EMGcount);
+						 auto result = gcnew array<EMGReturn>(EMGcount);
 
-						 m_D3DWrap->WrapCreateBuffers(EMGcount); // Предварительное создание массива буферов.
+						 m_D3DWrap->WrapCreateBuffers(EMGcount); // Creating array of buffers.
 
-						 for (Byte i = 0; i < EMGcount; i++)
+						 for (byte i = 0; i < EMGcount; i++)
 						 {
-							 EMGoffsets[i] = br->ReadInt32(); // Заполнение массива списком.
-							 result[i] = ReadEMG(openFileDialog1->FileName, 32 + EMGoffsets[i] + 16); // Заполнение массива данными о каждом EMG.
+							 EMGoffsets[i] = br->ReadInt32(); // Filling array with list.
+							 result[i] = ReadEMG(openFileDialog1->FileName, 32 + EMGoffsets[i] + 16); // Filling array with data about each EMG.
 							 m_D3DWrap->WrapLoadEMG(i, result[i].SubmodelCount, result[i].DDSid, result[i].IndexCount,
 								 result[i].VertexCount, result[i].VertexSize,
 								 result[i].IndiceArray, result[i].VertexArray);
 						 }
 					 }
-					 else // В обратном случае убрать полностью.
+					 else // Remove full model.
 					 {
 						 m_D3DWrap->WrapCreateBuffers(0);
 					 }
 				 }
 
-				 // Частичное отображение модели.
+				 // Show parts of model
 				 if (e->Node->Parent != nullptr && e->Node->Parent->Name == "Node0")
 				 {
-					 FileStream^ fs = File::OpenRead(openFileDialog1->FileName);
-					 BinaryReader^ br = gcnew BinaryReader(fs);
+					 const auto fs = File::OpenRead(openFileDialog1->FileName);
+					 auto br = gcnew BinaryReader(fs);
 
-					 fs->Position = 32; // Пропуск 32 байт на позицию о кол-ве EMG.
+					 fs->Position = 32; // Skipping 32 bytes to position about EMG ammount.
 					 ushort EMGcount = br->ReadInt16();
-					 fs->Position = 32 + 8; // Позиция списка сдвигов на все EMG.
+					 fs->Position = 32 + 8; // Position of "offsets list" of every EMG.
 
-					 array<int>^ EMGoffsets = gcnew array<int>(EMGcount);
-					 array<EMGReturn>^ result = gcnew array<EMGReturn>(EMGcount);				 
+					 auto EMGoffsets = gcnew array<int>(EMGcount);
+					 auto result = gcnew array<EMGReturn>(EMGcount);				 
 					 
-					 // Вычисление необходимого числа буферов и создание массива отметок.
-					 ushort BufferCount = 0;
-					 array<bool>^ Arr = gcnew array<bool>(EMGcount);
-					 IEnumerator^ myEnum = e->Node->Parent->Nodes->GetEnumerator();
-					 while (myEnum->MoveNext())
+					 // Counting amount of buffers, creating array of checks.
+					 ushort buffer_count = 0;
+					 auto arr = gcnew array<bool>(EMGcount);
+					 auto my_enum = e->Node->Parent->Nodes->GetEnumerator();
+					 while (my_enum->MoveNext())
 					 {
-						 TreeNode^ node = safe_cast<TreeNode^>(myEnum->Current);						 
+						 const auto node = safe_cast<TreeNode^>(my_enum->Current);						 
 						 if (node->Checked)
 						 {
-							 BufferCount++;
-							 Arr[node->Index] = true;
+							 buffer_count++;
+							 arr[node->Index] = true;
 						 }
 						 else
-							 Arr[node->Index] = false;							 
+							 arr[node->Index] = false;							 
 					 }
 
-					 m_D3DWrap->WrapCreateBuffers(BufferCount); // Предварительное создание массива буферов.
+					 m_D3DWrap->WrapCreateBuffers(buffer_count); // Creating array of buffers.
 
-					 // Заполнение буферов с учётом отметок.
-					 int sendcount = 0;
-					 for (Byte i = 0; i < EMGcount; i++)
+					 // Filling arrays simmilar to checks.
+					 auto sendcount = 0;
+					 for (byte i = 0; i < EMGcount; i++)
 					 {
-						 EMGoffsets[i] = br->ReadInt32(); // Заполнение массива списком.						 
+						 EMGoffsets[i] = br->ReadInt32(); // Filling array with list.
 						 
-						 if (Arr[i] == true)
+						 if (arr[i] == true)
 						 {
-							 result[i] = ReadEMG(openFileDialog1->FileName, 32 + EMGoffsets[i] + 16); // Заполнение массива данными о каждом EMG.	
+							 result[i] = ReadEMG(openFileDialog1->FileName, 32 + EMGoffsets[i] + 16); // Filling array with data about each EMG.
 							 m_D3DWrap->WrapLoadEMG(sendcount, result[i].SubmodelCount, result[i].DDSid, result[i].IndexCount,
 								 result[i].VertexCount, result[i].VertexSize,
 								 result[i].IndiceArray, result[i].VertexArray);
@@ -1227,7 +1225,7 @@ private: System::Void treeView1_AfterCheck(System::Object^  sender, System::Wind
 				 }				 
 			 }			
 
-			 // Кнопка "Extract".
+			 // "Extract" button.
 			 if (!treeView1->Nodes[0]->Checked && !treeView1->Nodes[1]->Checked 
 				 && !treeView1->Nodes[2]->Checked)
 			  button1->Enabled = false;
@@ -1246,11 +1244,10 @@ private: System::Void treeView1_AfterSelect(System::Object^  sender, System::Win
 				 {
 					 if (e->Node->Index != e->Node->Parent->LastNode->Index)
 					 {
-						 String^ Path = Path::GetDirectoryName(openFileDialog1->FileName);
+						 auto Path = Path::GetDirectoryName(openFileDialog1->FileName);
 						 Path += "\\" + e->Node->Text;
 
-						 EMBReturn result;
-						 result = ReadEMB(Path);
+						 auto result = ReadEMB(Path);
 						 m_D3DWrap->WrapLoadDDS(result.DDScount, result.DDSsize, result.DDSArray);
 					 }
 				 }

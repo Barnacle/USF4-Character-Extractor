@@ -1,6 +1,6 @@
 #pragma once
 
-#include "..\D3D\D3D.h"
+#include "../D3D/D3D.h"
 
 class CD3DRender;
 
@@ -10,10 +10,10 @@ public:
 	Wrapper();
 	~Wrapper();
 
-	HRESULT WrapInit(int hWnd, int Width, int Height);
+	HRESULT WrapInit(int hWnd, int width, int height);
 	HRESULT WrapClose();
 	HRESULT WrapRender();
-	HRESULT	WrapResize(int Width, int Height);
+	HRESULT	WrapResize(int width, int height);
 	HRESULT	WrapOnMouseButtonUp();
 	HRESULT	WrapOnMouseMove(short x, short y, bool RMousing);
 	HRESULT	WrapOnMouseButtonDown(short x, short y);
@@ -31,7 +31,7 @@ public:
 		using System::IntPtr;
 		using System::Runtime::InteropServices::Marshal;
 
-		IntPtr ip = Marshal::StringToHGlobalAnsi(sysstr);
+		auto ip = Marshal::StringToHGlobalAnsi(sysstr);
 		std::string outString = static_cast<const char*>(ip.ToPointer());
 		Marshal::FreeHGlobal(ip);
 		return outString;
@@ -41,74 +41,74 @@ protected:
 	CD3DRender* m_pRenderer;
 };
 
-Wrapper::Wrapper()
+inline Wrapper::Wrapper()
 {
 	m_pRenderer = new CD3DRender;
 }
 
-Wrapper::~Wrapper()
+inline Wrapper::~Wrapper()
 {
 	delete m_pRenderer;
 }
 
-HRESULT Wrapper::WrapInit(int hWnd, int Width, int Height)
+inline HRESULT Wrapper::WrapInit(int hWnd, int width, int height)
 {
-	return m_pRenderer->init((HWND)hWnd, Width, Height);
+	return m_pRenderer->init(HWND(hWnd), width, height);
 }
 
-HRESULT Wrapper::WrapClose()
+inline HRESULT Wrapper::WrapClose()
 {
 	return m_pRenderer->Shutdown();
 }
 
-HRESULT Wrapper::WrapRender()
+inline HRESULT Wrapper::WrapRender()
 {
 	return m_pRenderer->ProcessFrame();
 }
 
-HRESULT Wrapper::WrapResize(int Width, int Height)
+inline HRESULT Wrapper::WrapResize(int width, int height)
 {
-	return m_pRenderer->Resize(Width, Height);
+	return m_pRenderer->Resize(width, height);
 }
 
-HRESULT Wrapper::WrapOnMouseButtonUp()
+inline HRESULT Wrapper::WrapOnMouseButtonUp()
 {
 	return m_pRenderer->OnMouseButtonUp();
 }
 
-HRESULT Wrapper::WrapOnMouseMove(short x, short y, bool RMousing)
+inline HRESULT Wrapper::WrapOnMouseMove(short x, short y, bool RMousing)
 {
 	return m_pRenderer->OnMouseMove(x, y, RMousing);
 }
 
-HRESULT Wrapper::WrapOnMouseButtonDown(short x, short y)
+inline HRESULT Wrapper::WrapOnMouseButtonDown(short x, short y)
 {
 	return m_pRenderer->OnMouseButtonDown(x, y);
 }
 
-HRESULT Wrapper::WrapCreateBuffers(ushort EMGcount)
+inline HRESULT Wrapper::WrapCreateBuffers(ushort EMGcount)
 {
 	return m_pRenderer->CreateBuffers(EMGcount);
 }
 
-HRESULT Wrapper::WrapLoadEMG(ushort CurrentEMG, ushort EMGsubmodels, unsigned char* DDSid, ushort* IndexCount, ushort VertexSize, ushort VerteSize, ushort** IndiceArray, unsigned char* VertexArray)
+inline HRESULT Wrapper::WrapLoadEMG(ushort CurrentEMG, ushort EMGsubmodels, unsigned char* DDSid, ushort* IndexCount, ushort VertexSize, ushort VerteSize, ushort** IndiceArray, unsigned char* VertexArray)
 {
 	return m_pRenderer->LoadEMG(CurrentEMG, EMGsubmodels, DDSid, IndexCount, VertexSize, VerteSize, IndiceArray, VertexArray);
 }
 
-HRESULT Wrapper::WrapLoadDDS(ushort DDScount, unsigned long* DDSsize, unsigned char** DDScontent)
+inline HRESULT Wrapper::WrapLoadDDS(ushort DDScount, unsigned long* DDSsize, unsigned char** DDScontent)
 {
 	return m_pRenderer->LoadDDS(DDScount, DDSsize, DDScontent);
 }
 
-HRESULT Wrapper::WrapSetup(System::String^ emaFileName, unsigned long emaBlockOffset)
+inline HRESULT Wrapper::WrapSetup(System::String^ emaFileName, unsigned long emaBlockOffset)
 {
-	std::string emaFileName1 = managedStrToNative(emaFileName);
+	const auto emaFileName1 = managedStrToNative(emaFileName);
 	return m_pRenderer->Setup(emaFileName1, emaBlockOffset);
 }
 
-HRESULT Wrapper::WrapUpdate(float(&structure)[500][6], std::string(&names)[500], System::String^ AnimationName, int frame)
+inline HRESULT Wrapper::WrapUpdate(float(&structure)[500][6], std::string(&names)[500], System::String^ AnimationName, int frame)
 {
-	std::string AnimationName1 = managedStrToNative(AnimationName);
+	const auto AnimationName1 = managedStrToNative(AnimationName);
 	return m_pRenderer->Update(structure, names, AnimationName1, frame);
 }

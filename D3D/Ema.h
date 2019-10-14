@@ -4,7 +4,6 @@
 
 #include <stdio.h>
 #include <string>
-#include <sstream>
 #include <map>
 #include <vector>
 #include <fstream>
@@ -20,14 +19,14 @@ void leftHandToEulerAnglesXYZ(const Real m[16], Real& rfXAngle, Real& rfYAngle, 
 	// | r20 r21 r22 |   | -sy     cy*sx           cx*cy          |
 	// +-           -+   +-                                      -+
 
-	if (m[8] < (Real)1.0)
+	if (m[8] < Real(1.0))
 	{
-		if (m[8] > -(Real)1.0)
+		if (m[8] > -Real(1.0))
 		{
 			// y_angle = asin(-r20)
 			// z_angle = atan2(r10,r00)
 			// x_angle = atan2(r21,r22)
-			rfYAngle = (Real)asin(-(double)m[8]);
+			rfYAngle = Real(asin(-double(m[8])));
 			rfZAngle = atan2(m[4], m[0]);
 			rfXAngle = atan2(m[9], m[10]);
 			return;//EA_UNIQUE
@@ -37,9 +36,9 @@ void leftHandToEulerAnglesXYZ(const Real m[16], Real& rfXAngle, Real& rfYAngle, 
 			// y_angle = +pi/2
 			// x_angle - z_angle = atan2(r01,r02)
 			// WARNING.  The solution is not unique.  Choosing x_angle = 0.
-			rfYAngle = (Real)(0.5*M_PI);
+			rfYAngle = Real(0.5 * M_PI);
 			rfZAngle = -atan2(m[1], m[2]);
-			rfXAngle = (Real)0.0;
+			rfXAngle = Real(0.0);
 			return;//EA_NOT_UNIQUE_DIF
 		}
 	}
@@ -48,42 +47,41 @@ void leftHandToEulerAnglesXYZ(const Real m[16], Real& rfXAngle, Real& rfYAngle, 
 		// y_angle = -pi/2
 		// x_angle + z_angle = atan2(-r01,-r02)
 		// WARNING.  The solution is not unique.  Choosing x_angle = 0;
-		rfYAngle = -(Real)(0.5*M_PI);
+		rfYAngle = -Real(0.5 * M_PI);
 		rfZAngle = atan2(-m[1], -m[2]);
-		rfXAngle = (Real)0.0;
+		rfXAngle = Real(0.0);
 		return;//EA_NOT_UNIQUE_SUM
 	}
 }
-void decomposeMatrix(float rotation[3], float scale[3], float translation[3], const float matrix[16], float rotationQuaternion[4])
+
+inline void decomposeMatrix(float rotation[3], float scale[3], float translation[3], const float matrix[16], float rotationQuaternion[4])
 {
-	if (matrix == NULL)
-	{
+	if (matrix == nullptr)
 		return;
-	}
+
 	D3DXMATRIX originalMatrix(matrix);
 	D3DXQUATERNION q;
 	D3DXVECTOR3 originalScale;
 	D3DXVECTOR3 originalTrans;
 	D3DXMatrixDecompose(&originalScale, &q, &originalTrans, &originalMatrix);
 
-	memcpy(translation, (float*)originalTrans, 3 * sizeof(float));
-	memcpy(scale, (float*)originalScale, 3 * sizeof(float));
-	memcpy(rotationQuaternion, (float*)q, 4 * sizeof(float));
+	memcpy(translation, static_cast<float*>(originalTrans), 3 * sizeof(float));
+	memcpy(scale, static_cast<float*>(originalScale), 3 * sizeof(float));
+	memcpy(rotationQuaternion, static_cast<float*>(q), 4 * sizeof(float));
 
 	D3DXMATRIX m;
 	D3DXMatrixTranspose(&m, &originalMatrix);
 	leftHandToEulerAnglesXYZ<float>(m, rotation[0], rotation[1], rotation[2]);
 
-	rotation[0] *= (float)(180. / M_PI);
-	rotation[1] *= (float)(180. / M_PI);
-	rotation[2] *= (float)(180. / M_PI);
+	rotation[0] *= float(180. / M_PI);
+	rotation[1] *= float(180. / M_PI);
+	rotation[2] *= float(180. / M_PI);
 }
-void composeMatrixQuat(const D3DXQUATERNION & rotation, float scale[3], float translation[3], float matrix[16])
+
+inline void composeMatrixQuat(const D3DXQUATERNION & rotation, float scale[3], float translation[3], float matrix[16])
 {
-	if (matrix == NULL)
-	{
+	if (matrix == nullptr)
 		return;
-	}
 
 	D3DXMATRIX translationMatrix, scalingMatrix, rotationMatrix;
 	D3DXMatrixTranslation(&translationMatrix, translation[0], translation[1], translation[2]);
@@ -91,20 +89,21 @@ void composeMatrixQuat(const D3DXQUATERNION & rotation, float scale[3], float tr
 	D3DXMatrixRotationQuaternion(&rotationMatrix, &rotation);
 
 	//store result
-	D3DXMATRIX fullMatrix = scalingMatrix * rotationMatrix * translationMatrix;
-	memcpy(matrix, (float*)fullMatrix, 16 * sizeof(float));
+	auto fullMatrix = scalingMatrix * rotationMatrix * translationMatrix;
+	memcpy(matrix, static_cast<float*>(fullMatrix), 16 * sizeof(float));
 }
+
 //Pitch->X axis, Yaw->Y axis, Roll->Z axis
-void eulerToQuaternionXYZ(float fPitch, float fYaw, float fRoll, float quaternion[4])
+inline void eulerToQuaternionXYZ(float fPitch, float fYaw, float fRoll, float quaternion[4])
 {
-	const float fSinPitch(sin(fPitch*0.5F));
-	const float fCosPitch(cos(fPitch*0.5F));
-	const float fSinYaw(sin(fYaw*0.5F));
-	const float fCosYaw(cos(fYaw*0.5F));
-	const float fSinRoll(sin(fRoll*0.5F));
-	const float fCosRoll(cos(fRoll*0.5F));
-	const float fCosPitchCosYaw(fCosPitch*fCosYaw);
-	const float fSinPitchSinYaw(fSinPitch*fSinYaw);
+	const auto fSinPitch(sin(fPitch*0.5F));
+	const auto fCosPitch(cos(fPitch*0.5F));
+	const auto fSinYaw(sin(fYaw*0.5F));
+	const auto fCosYaw(cos(fYaw*0.5F));
+	const auto fSinRoll(sin(fRoll*0.5F));
+	const auto fCosRoll(cos(fRoll*0.5F));
+	const auto fCosPitchCosYaw(fCosPitch*fCosYaw);
+	const auto fSinPitchSinYaw(fSinPitch*fSinYaw);
 	quaternion[0] = fSinRoll * fCosPitchCosYaw - fCosRoll * fSinPitchSinYaw;
 	quaternion[1] = fCosRoll * fSinPitch * fCosYaw + fSinRoll * fCosPitch * fSinYaw;
 	quaternion[2] = fCosRoll * fCosPitch * fSinYaw - fSinRoll * fSinPitch * fCosYaw;
@@ -210,7 +209,7 @@ struct EMAData
 		bool absolute;
 	};
 	typedef std::map<unsigned char, Commands> CommandsPerComponent;
-	typedef std::map<EMAData::ETransformType, CommandsPerComponent> CommandsPerComponentPerType;
+	typedef std::map<ETransformType, CommandsPerComponent> CommandsPerComponentPerType;
 	typedef std::map<unsigned short, CommandsPerComponentPerType> CommandsPerComponentPerTypePerBone;
 	struct EMAAnimation
 	{
@@ -255,13 +254,13 @@ public:
 
 	unsigned short getAnimationDuration(std::string const& name) const
 	{
-		std::map<std::string, unsigned int>::const_iterator it = m_animationIndexPerName.find(name);
+		auto it = m_animationIndexPerName.find(name);
 		return (m_animationIndexPerName.end() != it) ? (it->second<m_animations.size()) ? m_animations[it->second].duration : 0 : 0;
 	}
+
 	void setupPaletteNames(std::map<std::string, unsigned short> & matrixNames)
 	{
-		for (std::map<unsigned short, std::string>::iterator itNode = m_skelettonNodeNames.begin();
-			itNode != m_skelettonNodeNames.end(); itNode++)
+		for (auto itNode = m_skelettonNodeNames.begin(); itNode != m_skelettonNodeNames.end(); itNode++)
 		{
 			matrixNames.insert(std::map<std::string, unsigned short>::value_type(itNode->second, itNode->first));
 		}
@@ -269,18 +268,17 @@ public:
 
 	void setupFrame(std::string const& name, float frame)
 	{
-		std::map<std::string, unsigned int>::const_iterator it = m_animationIndexPerName.find(name);
+		const std::map<std::string, unsigned int>::const_iterator it = m_animationIndexPerName.find(name);
 
-		unsigned int animationIndex = (m_animationIndexPerName.end() != it) ? it->second : ~0;
+		const auto animationIndex = m_animationIndexPerName.end() != it ? it->second : ~0;
 
-		EMAAnimation *currentAnimation = (animationIndex<m_animations.size()) ? &m_animations[animationIndex] : 0;
+		auto currentAnimation = animationIndex<m_animations.size() ? &m_animations[animationIndex] : nullptr;
 
-		float integerFrame = ceil(frame);
-		float frameFixed = currentAnimation == 0 ? 0 : (((int)integerFrame) % currentAnimation->duration) - (integerFrame - frame);
-		for (EMAData::SkelettonNodePerNumberMap::iterator itNode = m_skelettonNodes.begin();
-			itNode != m_skelettonNodes.end(); itNode++)
+		const auto integerFrame = ceil(frame);
+		const auto frameFixed = currentAnimation == nullptr ? 0 : (int)integerFrame % currentAnimation->duration - (integerFrame - frame);
+		for (auto itNode = m_skelettonNodes.begin(); itNode != m_skelettonNodes.end(); itNode++)
 		{
-			EMASkelettonNode & node = itNode->second;
+			auto& node = itNode->second;
 
 			decomposeMatrix(node.rotation, node.scale, node.translation, node.matrix, node.rotationQuaternion);
 
@@ -313,10 +311,10 @@ public:
 				CommandsPerComponentPerTypePerBone::const_iterator boneCommandsIt = currentAnimation->commandsPerComponentPerTypePerBone.find(node.number);
 				if (currentAnimation->commandsPerComponentPerTypePerBone.end() != boneCommandsIt)
 				{
-					CommandsPerComponentPerType const& commandsPerComponentPerType = boneCommandsIt->second;
+					auto const& commandsPerComponentPerType = boneCommandsIt->second;
 
 					// translation
-					if (getTransform(*currentAnimation, boneCommandsIt->second, EMAData::E_TRANSLATION, frameFixed, node.animatedTranslation, node.animatedAbsoluteTranslationFlag))
+					if (getTransform(*currentAnimation, boneCommandsIt->second, E_TRANSLATION, frameFixed, node.animatedTranslation, node.animatedAbsoluteTranslationFlag))
 					{
 						if (node.animatedAbsoluteTranslationFlag)
 							node.update_flags |= 0x00010000;
@@ -325,12 +323,12 @@ public:
 					}
 
 					// rotation
-					if (getTransform(*currentAnimation, boneCommandsIt->second, EMAData::E_ROTATION, frameFixed, node.animatedRotation, node.animatedAbsoluteRotationFlag))
+					if (getTransform(*currentAnimation, boneCommandsIt->second, E_ROTATION, frameFixed, node.animatedRotation, node.animatedAbsoluteRotationFlag))
 					{
 						eulerToQuaternionXYZ(
-							node.animatedRotation[1] * (float)(M_PI / 180.),
-							node.animatedRotation[2] * (float)(M_PI / 180.),
-							node.animatedRotation[0] * (float)(M_PI / 180.),
+							node.animatedRotation[1] * float(M_PI / 180.),
+							node.animatedRotation[2] * float(M_PI / 180.),
+							node.animatedRotation[0] * float(M_PI / 180.),
 							node.animatedRotationQuaternion);
 
 						if (node.animatedAbsoluteRotationFlag)
@@ -340,7 +338,7 @@ public:
 					}
 
 					// scale
-					if (getTransform(*currentAnimation, boneCommandsIt->second, EMAData::E_SCALING, frameFixed, node.animatedScale, node.animatedAbsoluteScaleFlag))
+					if (getTransform(*currentAnimation, boneCommandsIt->second, E_SCALING, frameFixed, node.animatedScale, node.animatedAbsoluteScaleFlag))
 					{
 						if (node.animatedAbsoluteScaleFlag)
 							node.update_flags |= 0x00040000;
@@ -405,34 +403,33 @@ public:
 
 	bool getTransform(EMAAnimation const& currentAnimation, CommandsPerComponentPerType const& commandsPerComponentPerType, EMAData::ETransformType type, float frame, float values[3], bool& globalValueFlag)
 	{
-		bool animated = false;
-		CommandsPerComponentPerType::const_iterator itCommandsPerType = commandsPerComponentPerType.find(type);
+		auto animated = false;
+		const auto itCommandsPerType = commandsPerComponentPerType.find(type);
 		if (itCommandsPerType != commandsPerComponentPerType.end())
 		{
-			CommandsPerComponent const& commandsPerComponent(itCommandsPerType->second);
-			for (CommandsPerComponent::const_iterator itCommandsPerComponent = commandsPerComponent.begin();
-				itCommandsPerComponent != commandsPerComponent.end();
-				++itCommandsPerComponent)
+			auto const& commandsPerComponent(itCommandsPerType->second);
+			for (auto itCommandsPerComponent = commandsPerComponent.begin(); itCommandsPerComponent != commandsPerComponent.end(); ++itCommandsPerComponent)
 			{
 				if (itCommandsPerComponent->first >= 3)
 				{
 					continue;
 				}
-				Commands const& commands(itCommandsPerComponent->second);
-				CommandSequence const& commandSequence(commands.steps);
+
+				auto const& commands(itCommandsPerComponent->second);
+				auto const& commandSequence(commands.steps);
 				//there is always a step 0 at first (so we have a new step 0 when there is no animation)
-				std::vector<EMAAnimationCommandStep>::const_iterator itStep = commandSequence.begin();
-				std::vector<EMAAnimationCommandStep>::const_iterator itPrevStep = itStep;
+				auto itStep = commandSequence.begin();
+				auto itPrevStep = itStep;
 				++itStep;
 				for (; itStep != commandSequence.end(); itPrevStep = itStep, ++itStep)
 				{
-					if (((float)itStep->timing) >= frame)
+					if (float(itStep->timing) >= frame)
 					{
-						float s = (frame - (float)itPrevStep->timing) / (float)(itStep->timing - itPrevStep->timing);    // scale goes from 0 to 1
-						float P1 = currentAnimation.values[itPrevStep->index];
-						float P2 = currentAnimation.values[itStep->index];
-						float T1 = (itPrevStep->tangentIndex == ~0) ? 0.f : currentAnimation.values[itPrevStep->tangentIndex];
-						float T2 = (itStep->tangentIndex == ~0) ? 0.f : currentAnimation.values[itStep->tangentIndex];
+						const auto s = (frame - float(itPrevStep->timing)) / float(itStep->timing - itPrevStep->timing);    // scale goes from 0 to 1
+						const auto P1 = currentAnimation.values[itPrevStep->index];
+						const auto P2 = currentAnimation.values[itStep->index];
+						const auto T1 = itPrevStep->tangentIndex == ~0 ? 0.f : currentAnimation.values[itPrevStep->tangentIndex];
+						const auto T2 = itStep->tangentIndex == ~0 ? 0.f : currentAnimation.values[itStep->tangentIndex];
 						values[itCommandsPerComponent->first] = hermiteInterpolation(P1, T1, P2, T2, s);
 						globalValueFlag |= commands.absolute;
 						animated = true;
@@ -443,6 +440,7 @@ public:
 		}
 		return animated;
 	}
+
 	static std::string readZeroTerminatedString(std::istream& file)
 	{
 		std::string s;
@@ -461,6 +459,7 @@ public:
 		}
 		return s;
 	}
+
 	bool readAnimation(EMAAnimation& currentAnimation, std::istream& file, unsigned long animationBlockOffset)
 	{
 		currentAnimation.commandsPerComponentPerTypePerBone.clear();
@@ -493,22 +492,22 @@ public:
 
 		for (unsigned long i = 0; i<m_animationHeader.cmdOffsetCount; i++)
 		{
-			int currentOffset = animationBlockOffset + cmdOffsets[i];
+			const int currentOffset = cmdOffsets[i] + animationBlockOffset;
 			//int currentSize = ((i+1)<m_animationHeader.cmdOffsetCount ? cmdOffsets[i+1] : m_animationHeader.valuesOffset)-cmdOffsets[i];
 			file.seekg(currentOffset, std::ios::beg);
 			EMAAnimationCommandHeader commandHeader;
 			file.read(reinterpret_cast<char*>(&commandHeader), sizeof (EMAAnimationCommandHeader));
 
-			EMAData::ETransformType transformType =
-				commandHeader.transformType == 0 ? EMAData::E_TRANSLATION
-				: commandHeader.transformType == 1 ? EMAData::E_ROTATION
-				: commandHeader.transformType == 2 ? EMAData::E_SCALING
-				: EMAData::E_NOP;
+			auto transformType =
+				commandHeader.transformType == 0 ? E_TRANSLATION
+				: commandHeader.transformType == 1 ? E_ROTATION
+				: commandHeader.transformType == 2 ? E_SCALING
+				: E_NOP;
 			unsigned char transformComponent = commandHeader.flags & 0x03;
-			CommandsPerComponentPerType &commandsPerComponentPerType = currentAnimation.commandsPerComponentPerTypePerBone[commandHeader.boneIndex];
-			CommandsPerComponent &commandsPerComponent = commandsPerComponentPerType[transformType];
-			Commands& commands = commandsPerComponent[transformComponent];
-			CommandSequence& commandSequence(commands.steps);
+			auto& commandsPerComponentPerType = currentAnimation.commandsPerComponentPerTypePerBone[commandHeader.boneIndex];
+			auto& commandsPerComponent = commandsPerComponentPerType[transformType];
+			auto& commands = commandsPerComponent[transformComponent];
+			auto& commandSequence(commands.steps);
 			commands.absolute = (commandHeader.flags & 0x10) != 0;
 
 			commands.steps.resize(commandHeader.stepCount);
@@ -516,7 +515,7 @@ public:
 			unsigned int readBytes = 0;
 			if (commandHeader.flags & 0x20)
 			{
-				for (CommandSequence::iterator itStep = commandSequence.begin(); itStep != commandSequence.end(); ++itStep)
+				for (auto itStep = commandSequence.begin(); itStep != commandSequence.end(); ++itStep)
 				{
 					unsigned short timing16;
 					file.read(reinterpret_cast<char*>(&timing16), sizeof (unsigned short));
@@ -526,7 +525,7 @@ public:
 			}
 			else
 			{
-				for (CommandSequence::iterator itStep = commandSequence.begin(); itStep != commandSequence.end(); ++itStep)
+				for (auto itStep = commandSequence.begin(); itStep != commandSequence.end(); ++itStep)
 				{
 					unsigned char timing8;
 					file.read(reinterpret_cast<char*>(&timing8), sizeof (unsigned char));
@@ -534,31 +533,32 @@ public:
 					itStep->timing = timing8;
 				}
 			}
+
 			if (readBytes<commandHeader.indicesOffset)
 			{
-				file.seekg(currentOffset + commandHeader.indicesOffset, std::ios::beg);
+				file.seekg(commandHeader.indicesOffset + currentOffset, std::ios::beg);
 			}
 
 			if (commandHeader.flags & 0x40)
 			{
-				for (CommandSequence::iterator itStep = commandSequence.begin(); itStep != commandSequence.end(); ++itStep)
+				for (auto itStep = commandSequence.begin(); itStep != commandSequence.end(); ++itStep)
 				{
 					unsigned long index;
 					file.read(reinterpret_cast<char*>(&index), sizeof (unsigned long));
-					itStep->index = (index & 0x3FFFFFFF);
-					unsigned char highOrderBits = ((index >> 30) & 0x03);
+					itStep->index = index & 0x3FFFFFFF;
+					const unsigned char highOrderBits = index >> 30 & 0x03;
 					itStep->tangentIndex = highOrderBits == 0 ? ~0 : (itStep->index + highOrderBits);
 				}
 			}
 			else
 			{
-				for (CommandSequence::iterator itStep = commandSequence.begin(); itStep != commandSequence.end(); ++itStep)
+				for (auto itStep = commandSequence.begin(); itStep != commandSequence.end(); ++itStep)
 				{
 					unsigned short index16;
 					file.read(reinterpret_cast<char*>(&index16), sizeof (unsigned short));
-					itStep->index = (index16 & 0x3FFF);
-					unsigned char highOrderBits = ((index16 >> 14) & 0x03);
-					itStep->tangentIndex = highOrderBits == 0 ? ~0 : (itStep->index + highOrderBits);
+					itStep->index = index16 & 0x3FFF;
+					const unsigned char highOrderBits = index16 >> 14 & 0x03;
+					itStep->tangentIndex = highOrderBits == 0 ? ~0 : itStep->index + highOrderBits;
 				}
 			}
 		}
@@ -626,10 +626,10 @@ public:
 		file.seekg(skeletonAdress + skelettonHeader.skeletonStartOffset, std::ios::beg);
 		for (unsigned int i = 0; i<m_nodeCount; i++)
 		{
-			EMASkelettonNodeTemp skelettonNodeTemp;
+			EMASkelettonNodeTemp skelettonNodeTemp{};
 			file.read(reinterpret_cast<char*>(&skelettonNodeTemp), sizeof (EMASkelettonNodeTemp));
 
-			EMASkelettonNode skelettonNode;
+			EMASkelettonNode skelettonNode{};
 			skelettonNode.number = i;
 			skelettonNode.parent = skelettonNodeTemp.parent;
 			skelettonNode.child1 = skelettonNodeTemp.child1;
@@ -655,9 +655,9 @@ public:
 			// bank = Math.atan2(-m.m12,m.m11);
 			// attitude = Math.asin(m.m10);
 			float translation[] = { -m_matrix[12], m_matrix[14], m_matrix[13] };
-			float rx = atan2(-m_matrix[2], m_matrix[0]);
-			float ry = atan2(-m_matrix[9], m_matrix[5]);
-			float rz = asin(m_matrix[1]);
+			auto rx = atan2(-m_matrix[2], m_matrix[0]);
+			auto ry = atan2(-m_matrix[9], m_matrix[5]);
+			auto rz = asin(m_matrix[1]);
 		}
 		else
 		{
@@ -686,7 +686,7 @@ public:
 		m_animations.resize(animationCount);
 		for (unsigned int i = 0; i < animationCount; ++i)
 		{
-			unsigned long animationBlockOffset = emaBlockOffset + animationDataAddresses[i];
+			auto animationBlockOffset = emaBlockOffset + animationDataAddresses[i];
 			readAnimation(m_animations[i], file, animationBlockOffset);
 			m_animationIndexPerName.insert(std::map<std::string, unsigned int>::value_type(m_animations[i].name, i));
 			m_animationNames.push_back(m_animations[i].name);
@@ -708,7 +708,7 @@ public:
 
 	bool setup(std::string emaFileName, unsigned long emaBlockOffset)
 	{
-		bool ok = emaData.load(emaFileName, emaBlockOffset);
+		auto ok = emaData.load(emaFileName, emaBlockOffset);
 		return ok;
 	}
 
@@ -729,30 +729,29 @@ public:
 	{
 		std::map<int, D3DXMATRIX> matrixPalette;
 		setupMatrixPalette(animationName, frame, matrixPalette);
-		EMAData::SkelettonNodePerNumberMap &skelettonNodes = emaData.m_skelettonNodes;
+		auto& skelettonNodes = emaData.m_skelettonNodes;
 
-		for (EMAData::SkelettonNodePerNumberMap::const_iterator it = skelettonNodes.begin();
-			it != skelettonNodes.end(); it++)
+		for (EMAData::SkelettonNodePerNumberMap::const_iterator it = skelettonNodes.begin(); it != skelettonNodes.end(); it++)
 		{
-			EMASkelettonNode const& node = it->second;
+			auto const& node = it->second;
 
 			std::map<int, D3DXMATRIX>::const_iterator itNodeMatrix = matrixPalette.find(node.number);
 			std::map<int, D3DXMATRIX>::const_iterator itParentNodeMatrix = matrixPalette.find(node.parent);
 
-			int id = itNodeMatrix->first;
+			auto id = itNodeMatrix->first;
 
 			if (itNodeMatrix == matrixPalette.end() || itParentNodeMatrix == matrixPalette.end())
 			{
 				continue;
 			}
 
-			D3DXMATRIX MatrixWorld(itNodeMatrix->second);
-			D3DXMATRIX MatrixParent(itParentNodeMatrix->second);
+			auto MatrixWorld(itNodeMatrix->second);
+			auto MatrixParent(itParentNodeMatrix->second);
 
 			D3DXMATRIX MatrixParentInverse;
 			D3DXMatrixInverse(&MatrixParentInverse, 0, &MatrixParent);
 
-			D3DXMATRIX LocalMatrix = MatrixWorld * MatrixParentInverse;
+			auto LocalMatrix = MatrixWorld * MatrixParentInverse;
 
 			D3DXVECTOR3 translation, rotation, scale;
 			D3DXQUATERNION rotation_quaternion;
@@ -761,9 +760,9 @@ public:
 			structure[id][0] = translation.x;
 			structure[id][1] = translation.y;
 			structure[id][2] = translation.z;
-			structure[id][3] = rotation.x * (float)(M_PI / 180.);
-			structure[id][4] = rotation.y * (float)(M_PI / 180.);
-			structure[id][5] = rotation.z * (float)(M_PI / 180.);
+			structure[id][3] = rotation.x * float(M_PI / 180.);
+			structure[id][4] = rotation.y * float(M_PI / 180.);
+			structure[id][5] = rotation.z * float(M_PI / 180.);
 
 			std::map<unsigned short, std::string>::const_iterator itRefSkeletonNodeName = emaData.m_skelettonNodeNames.find(node.number);
 			names[id] = itRefSkeletonNodeName->second;
@@ -772,13 +771,13 @@ public:
 
 	void setupMatrixPalette(std::string const& name, float frame, std::map<int, D3DXMATRIX> & matrixPalette)
 	{
-		EMAData::SkelettonNodePerNumberMap &skelettonNodes = emaData.m_skelettonNodes;
+		auto& skelettonNodes = emaData.m_skelettonNodes;
 
 		emaData.setupFrame(name, frame);
 
-		for (EMAData::SkelettonNodePerNumberMap::iterator it = skelettonNodes.begin(); it != skelettonNodes.end(); it++)
+		for (auto it = skelettonNodes.begin(); it != skelettonNodes.end(); it++)
 		{
-			EMASkelettonNode & node = it->second;
+			auto& node = it->second;
 			update_node<true, false>(node.number);
 		}
 
@@ -787,28 +786,27 @@ public:
 			updateIKData(i);
 		}
 
-		for (EMAData::SkelettonNodePerNumberMap::iterator it = skelettonNodes.begin();
-			it != skelettonNodes.end(); it++)
+		for (auto it = skelettonNodes.begin(); it != skelettonNodes.end(); it++)
 		{
-			EMASkelettonNode & node = it->second;
+			auto& node = it->second;
 			update_node<true, false>(node.number);
 
 			matrixPalette.insert(std::map<int, D3DXMATRIX>::value_type(node.number, D3DXMATRIX(node.animatedMatrix)));
-		};
+		}
 	}
 
 	template<bool initialize, bool update_parent>
 	bool update_node(unsigned short nodeNumber)
 	{
-		EMAData::SkelettonNodePerNumberMap &skelettonNodes = emaData.m_skelettonNodes;
-		EMAData::SkelettonNodePerNumberMap::iterator nodeIt = skelettonNodes.find(nodeNumber);
+		auto& skelettonNodes = emaData.m_skelettonNodes;
+		auto nodeIt = skelettonNodes.find(nodeNumber);
 		if (skelettonNodes.end() != nodeIt)
 		{
-			EMASkelettonNode & node = nodeIt->second;
-			unsigned short parentNumber = node.parent;
+			auto& node = nodeIt->second;
+			auto parentNumber = node.parent;
 
-			const EMASkelettonNode * parent_node = NULL;
-			EMAData::SkelettonNodePerNumberMap::const_iterator parentIt = skelettonNodes.find(parentNumber);
+			const EMASkelettonNode * parent_node = nullptr;
+			const EMAData::SkelettonNodePerNumberMap::const_iterator parentIt = skelettonNodes.find(parentNumber);
 			if (skelettonNodes.end() != parentIt)
 			{
 				parent_node = &parentIt->second;
@@ -819,7 +817,7 @@ public:
 				update_node<initialize, update_parent>(parent_node->number);
 			}
 
-			bool update = false;
+			auto update = false;
 
 			if (initialize)
 			{
@@ -893,10 +891,10 @@ public:
 			// matrix
 			composeMatrixQuat(rotation_quaternion, scale, translation, matrix);
 
-			memcpy(node.animatedScale, (float*)scale, 3 * sizeof(float));
-			memcpy(node.animatedTranslation, (float*)translation, 3 * sizeof(float));
-			memcpy(node.animatedRotationQuaternion, (float*)rotation_quaternion, 4 * sizeof(float));
-			memcpy(node.animatedMatrix, (float*)matrix, 16 * sizeof(float));
+			memcpy(node.animatedScale, static_cast<float*>(scale), 3 * sizeof(float));
+			memcpy(node.animatedTranslation, static_cast<float*>(translation), 3 * sizeof(float));
+			memcpy(node.animatedRotationQuaternion, static_cast<float*>(rotation_quaternion), 4 * sizeof(float));
+			memcpy(node.animatedMatrix, static_cast<float*>(matrix), 16 * sizeof(float));
 
 			node.animationProcessingDone = true;
 			node.update_flags |= 0x80000000;
@@ -1084,10 +1082,10 @@ public:
 
 	bool updateIKData(unsigned long const& ikNumber)
 	{
-		bool bResult = false;
+		auto bResult = false;
 		if (ikNumber < emaData.m_ikData.size())
 		{
-			EMASkeletonIKData const& ikData = emaData.m_ikData.at(ikNumber);
+			auto const& ikData = emaData.m_ikData.at(ikNumber);
 
 			switch (ikData.method)
 			{
@@ -1112,13 +1110,14 @@ public:
 
 		return bResult;
 	}
+
 	void processIKData0x00_02(EMASkeletonIKData const& ikData)
 	{
-		EMAData::SkelettonNodePerNumberMap &skelettonNodes = emaData.m_skelettonNodes;
-		WORD index0 = *((WORD*)(ikData.data + 0x02));
-		EMAData::SkelettonNodePerNumberMap::iterator nodeIt = skelettonNodes.find(index0);
-		EMASkelettonNode * nodeP = NULL;
-		EMASkelettonNode * node0 = NULL;
+		auto& skelettonNodes = emaData.m_skelettonNodes;
+		auto index0 = *(WORD*)(ikData.data + 0x02);
+		auto nodeIt = skelettonNodes.find(index0);
+		EMASkelettonNode * nodeP = nullptr;
+		EMASkelettonNode * node0 = nullptr;
 		if (skelettonNodes.end() != nodeIt)
 		{
 			node0 = &(nodeIt->second);
@@ -1130,30 +1129,34 @@ public:
 				nodeP = &(nodeIt->second);
 			}
 		}
-		WORD index1 = *((WORD*)(ikData.data + 0x04));
+
+		auto index1 = *(WORD*)(ikData.data + 0x04);
 		nodeIt = skelettonNodes.find(index1);
-		EMASkelettonNode * node1 = NULL;
+		EMASkelettonNode * node1 = nullptr;
 		if (skelettonNodes.end() != nodeIt)
 		{
 			node1 = &(nodeIt->second);
 		}
-		WORD index2 = *((WORD*)(ikData.data + 0x06));
+
+		auto index2 = *(WORD*)(ikData.data + 0x06);
 		nodeIt = skelettonNodes.find(index2);
-		EMASkelettonNode * node2 = NULL;
+		EMASkelettonNode * node2 = nullptr;
 		if (skelettonNodes.end() != nodeIt)
 		{
-			node2 = &(nodeIt->second);
+			node2 = &nodeIt->second;
 		}
-		WORD index3 = *((WORD*)(ikData.data + 0x08));
+
+		auto index3 = *(WORD*)(ikData.data + 0x08);
 		nodeIt = skelettonNodes.find(index3);
-		EMASkelettonNode * node3 = NULL;
+		EMASkelettonNode * node3 = nullptr;
 		if (skelettonNodes.end() != nodeIt)
 		{
-			node3 = &(nodeIt->second);
+			node3 = &nodeIt->second;
 		}
-		WORD index4 = *((WORD*)(ikData.data + 0x0A));
+
+		auto index4 = *(WORD*)(ikData.data + 0x0A);
 		nodeIt = skelettonNodes.find(index4);
-		EMASkelettonNode * node4 = NULL;
+		EMASkelettonNode * node4 = nullptr;
 		if (skelettonNodes.end() != nodeIt)
 		{
 			node4 = &(nodeIt->second);
@@ -1169,16 +1172,16 @@ public:
 
 		// sub_524390
 		{
-			D3DXVECTOR4 var_F0 = D3DXVECTOR4(0, 0, 0, 0);
-			D3DXVECTOR4 var_D0 = D3DXVECTOR4(0, 0, 0, 0);
-			D3DXVECTOR4 var_C0 = D3DXVECTOR4(0, 0, 0, 0);
-			D3DXVECTOR4 var_B0 = D3DXVECTOR4(0, 0, 0, 0);
-			D3DXVECTOR4 var_A0 = D3DXVECTOR4(0, 0, 0, 1);
+			auto var_F0 = D3DXVECTOR4(0, 0, 0, 0);
+			auto var_D0 = D3DXVECTOR4(0, 0, 0, 0);
+			auto var_C0 = D3DXVECTOR4(0, 0, 0, 0);
+			auto var_B0 = D3DXVECTOR4(0, 0, 0, 0);
+			auto var_A0 = D3DXVECTOR4(0, 0, 0, 1);
 
-			D3DXVECTOR4 var_140 = D3DXVECTOR4(0, 0, 0, 0);
-			D3DXVECTOR4 var_120 = D3DXVECTOR4(0, 0, 0, 0);
-			D3DXVECTOR4 var_100 = D3DXVECTOR4(0, 0, 0, 0);
-			D3DXVECTOR4 var_90 = D3DXVECTOR4(0, 0, 0, 0);
+			auto var_140 = D3DXVECTOR4(0, 0, 0, 0);
+			auto var_120 = D3DXVECTOR4(0, 0, 0, 0);
+			auto var_100 = D3DXVECTOR4(0, 0, 0, 0);
+			auto var_90 = D3DXVECTOR4(0, 0, 0, 0);
 
 			// update bone index unknown0x08
 			update_node<true, true>(node1->number);
@@ -1192,8 +1195,8 @@ public:
 			D3DXVec4Subtract(&var_120, &var_120, &var_100);
 			D3DXVec4Subtract(&var_140, &var_140, &var_100);
 
-			D3DXVec3Cross((D3DXVECTOR3*)&var_F0, (D3DXVECTOR3*)&var_140, (D3DXVECTOR3*)&var_120);
-			D3DXVec3Cross((D3DXVECTOR3*)&var_140, (D3DXVECTOR3*)&var_F0, (D3DXVECTOR3*)&var_120);
+			D3DXVec3Cross(reinterpret_cast<D3DXVECTOR3*>(&var_F0), reinterpret_cast<D3DXVECTOR3*>(&var_140), reinterpret_cast<D3DXVECTOR3*>(&var_120));
+			D3DXVec3Cross(reinterpret_cast<D3DXVECTOR3*>(&var_140), reinterpret_cast<D3DXVECTOR3*>(&var_F0), reinterpret_cast<D3DXVECTOR3*>(&var_120));
 
 			if (ikData.data[1] & 0x01)
 			{
@@ -1209,17 +1212,17 @@ public:
 
 			var_xmm4 = D3DXVECTOR4(D3DXVec4Length(&var_120), 0, 0, 0);
 
-			D3DXVECTOR4 scale0x08 = D3DXVECTOR4(D3DXVECTOR3(node1->animatedScale), 1);
-			D3DXVECTOR4 scale0x0A = D3DXVECTOR4(D3DXVECTOR3(node2->animatedScale), 1);
+			auto scale0x08 = D3DXVECTOR4(D3DXVECTOR3(node1->animatedScale), 1);
+			auto scale0x0A = D3DXVECTOR4(D3DXVECTOR3(node2->animatedScale), 1);
 
-			const float xScale0x08 = scale0x08.x, unkScale0x08 = node1->unknownScale; // 1.0f;
-			const float xScale0x0A = scale0x0A.x, unkScale0x0A = node2->unknownScale; // 1.0f;
+			const auto xScale0x08 = scale0x08.x, unkScale0x08 = node1->unknownScale; // 1.0f;
+			const auto xScale0x0A = scale0x0A.x, unkScale0x0A = node2->unknownScale; // 1.0f;
 
 			var_xmm1 = D3DXVECTOR4((xScale0x08 * unkScale0x08), 0, 0, 0);
 			var_xmm3 = D3DXVECTOR4(var_xmm4.x, var_xmm1.x, 0, 0);
 			var_xmm2 = D3DXVECTOR4((xScale0x0A * unkScale0x0A), 0, 0, 0);
 
-			float var_104 = var_xmm1.x;
+			auto var_104 = var_xmm1.x;
 			var_xmm1 = D3DXVECTOR4(var_xmm1.x, var_xmm2.x, 0, 0);
 			var_xmm2 = D3DXVECTOR4(var_xmm2.x, var_xmm4.x, 0, 0);
 
@@ -1360,11 +1363,11 @@ public:
 			// update position and quaternion information for bone index 0x08
 			D3DXQuaternionRotationMatrix(&rotation, &var_80);
 
-			leftHandToEulerAnglesXYZ((float*)var_80, node1->animatedRotation[0], node1->animatedRotation[1], node1->animatedRotation[2]);
+			leftHandToEulerAnglesXYZ(static_cast<float*>(var_80), node1->animatedRotation[0], node1->animatedRotation[1], node1->animatedRotation[2]);
 
-			memcpy(node1->animatedTranslation, (float*)(mat_bone0x08.m[3]), 3 * sizeof(float));
-			memcpy(node1->animatedRotationQuaternion, (float*)rotation, 4 * sizeof(float));
-			memcpy(node1->animatedMatrix, (float*)mat_bone0x08, 16 * sizeof(float));
+			memcpy(node1->animatedTranslation, static_cast<float*>(mat_bone0x08.m[3]), 3 * sizeof(float));
+			memcpy(node1->animatedRotationQuaternion, static_cast<float*>(rotation), 4 * sizeof(float));
+			memcpy(node1->animatedMatrix, static_cast<float*>(mat_bone0x08), 16 * sizeof(float));
 			// set flags for absolute translation and rotation
 			node1->animationProcessingDone = true;
 			node1->animatedAbsoluteRotationFlag = true;
@@ -1375,11 +1378,11 @@ public:
 			// update position and quaternion information for bone index 0x0A
 			D3DXQuaternionRotationMatrix(&rotation, &var_40);
 
-			leftHandToEulerAnglesXYZ((float*)var_40, node2->animatedRotation[0], node2->animatedRotation[1], node2->animatedRotation[2]);
+			leftHandToEulerAnglesXYZ(static_cast<float*>(var_40), node2->animatedRotation[0], node2->animatedRotation[1], node2->animatedRotation[2]);
 
-			memcpy(node2->animatedTranslation, (float*)(mat_bone0x0A.m[3]), 3 * sizeof(float));
-			memcpy(node2->animatedRotationQuaternion, (float*)rotation, 4 * sizeof(float));
-			memcpy(node2->animatedMatrix, (float*)mat_bone0x0A, 16 * sizeof(float));
+			memcpy(node2->animatedTranslation, static_cast<float*>(mat_bone0x0A.m[3]), 3 * sizeof(float));
+			memcpy(node2->animatedRotationQuaternion, static_cast<float*>(rotation), 4 * sizeof(float));
+			memcpy(node2->animatedMatrix, static_cast<float*>(mat_bone0x0A), 16 * sizeof(float));
 			// set flags for absolute translation and rotation
 			node2->animationProcessingDone = true;
 			node2->animatedAbsoluteRotationFlag = true;
@@ -1388,8 +1391,8 @@ public:
 			node2->update_flags |= 0xC0003000;
 
 			// update position for bone index 0x0C
-			memcpy(node3->animatedTranslation, (float*)var_100, 3 * sizeof(float));
-			memcpy((node3->animatedMatrix + 0x0C), (float*)var_100, 3 * sizeof(float));
+			memcpy(node3->animatedTranslation, static_cast<float*>(var_100), 3 * sizeof(float));
+			memcpy(node3->animatedMatrix + 0x0C, static_cast<float*>(var_100), 3 * sizeof(float));
 			// set flags for absolute translation
 			node3->animatedAbsoluteTranslationFlag = true;
 			node3->update_flags &= 0xFFFFFFFE;
@@ -1406,13 +1409,13 @@ public:
 	{
 		// sub_525270
 		{
-			EMAData::SkelettonNodePerNumberMap &skelettonNodes = emaData.m_skelettonNodes;
-			EMAData::SkelettonNodePerNumberMap::iterator nodeIt = skelettonNodes.find(*((WORD*)(ikData.data + 0x02)));
-			EMASkelettonNode * nodeP = NULL;
-			EMASkelettonNode * node0 = NULL;
+			auto& skelettonNodes = emaData.m_skelettonNodes;
+			auto nodeIt = skelettonNodes.find(*(WORD*)(ikData.data + 0x02));
+			EMASkelettonNode * nodeP = nullptr;
+			EMASkelettonNode * node0 = nullptr;
 			if (skelettonNodes.end() != nodeIt)
 			{
-				node0 = &(nodeIt->second);
+				node0 = &nodeIt->second;
 
 				// get parent node
 				nodeIt = skelettonNodes.find(node0->parent);
@@ -1421,17 +1424,17 @@ public:
 					nodeP = &(nodeIt->second);
 				}
 			}
-			nodeIt = skelettonNodes.find(*((WORD*)(ikData.data + 0x04)));
-			EMASkelettonNode * node1 = NULL;
+			nodeIt = skelettonNodes.find(*(WORD*)(ikData.data + 0x04));
+			EMASkelettonNode * node1 = nullptr;
 			if (skelettonNodes.end() != nodeIt)
 			{
-				node1 = &(nodeIt->second);
+				node1 = &nodeIt->second;
 			}
-			nodeIt = skelettonNodes.find(*((WORD*)(ikData.data + 0x06)));
-			EMASkelettonNode * node2 = NULL;
+			nodeIt = skelettonNodes.find(*(WORD*)(ikData.data + 0x06));
+			EMASkelettonNode * node2 = nullptr;
 			if (skelettonNodes.end() != nodeIt)
 			{
-				node2 = &(nodeIt->second);
+				node2 = &nodeIt->second;
 			}
 
 			if (!nodeP || !node0 || !node1 || !node2)
@@ -1451,7 +1454,7 @@ public:
 			if (ikData.data[1] & 0x01)
 			{
 				// - boneTransform0x06.position = lerp(boneTransform0x08.position, boneTransform0x0A.position, float0x0C);
-				translation = lerp(D3DXVECTOR3(node2->animatedTranslation), D3DXVECTOR3(node1->animatedTranslation), *((float*)(ikData.data + 0x0C)));
+				translation = lerp(D3DXVECTOR3(node2->animatedTranslation), D3DXVECTOR3(node1->animatedTranslation), *(float*)(ikData.data + 0x0C));
 			}
 			else
 			{
@@ -1464,7 +1467,7 @@ public:
 			if (ikData.data[1] & 0x02)
 			{
 				// - boneTransform0x06.rotation = slerp(boneTransform0x08.rotation, boneTransform0x0A.rotation, float0x10);
-				rotation = lerp(D3DXQUATERNION(node1->animatedRotationQuaternion), D3DXQUATERNION(node2->animatedRotationQuaternion), *((float*)(ikData.data + 0x10)));
+				rotation = lerp(D3DXQUATERNION(node1->animatedRotationQuaternion), D3DXQUATERNION(node2->animatedRotationQuaternion), *(float*)(ikData.data + 0x10));
 			}
 			else
 			{
@@ -1478,7 +1481,7 @@ public:
 			if (ikData.data[1] & 0x04)
 			{
 				// - boneTransform0x06.scale = lerp(boneTransform0x08.scale, boneTransform0x0A.scale, float0x14);
-				scale = lerp(D3DXVECTOR3(node2->animatedScale), D3DXVECTOR3(node1->animatedScale), *((float*)(ikData.data + 0x14)));
+				scale = lerp(D3DXVECTOR3(node2->animatedScale), D3DXVECTOR3(node1->animatedScale), *(float*)(ikData.data + 0x14));
 			}
 			else
 			{
@@ -1490,12 +1493,12 @@ public:
 			// update translation, rotation, and scale information for bone index 0x06
 			composeMatrixQuat(rotation, scale, translation, matrix);
 
-			leftHandToEulerAnglesXYZ((float*)matrix, node0->animatedRotation[0], node0->animatedRotation[1], node0->animatedRotation[2]);
+			leftHandToEulerAnglesXYZ(static_cast<float*>(matrix), node0->animatedRotation[0], node0->animatedRotation[1], node0->animatedRotation[2]);
 
-			memcpy(node0->animatedScale, (float*)scale, 3 * sizeof(float));
-			memcpy(node0->animatedTranslation, (float*)translation, 3 * sizeof(float));
-			memcpy(node0->animatedRotationQuaternion, (float*)rotation, 4 * sizeof(float));
-			memcpy(node0->animatedMatrix, (float*)matrix, 16 * sizeof(float));
+			memcpy(node0->animatedScale, static_cast<float*>(scale), 3 * sizeof(float));
+			memcpy(node0->animatedTranslation, static_cast<float*>(translation), 3 * sizeof(float));
+			memcpy(node0->animatedRotationQuaternion, static_cast<float*>(rotation), 4 * sizeof(float));
+			memcpy(node0->animatedMatrix, static_cast<float*>(matrix), 16 * sizeof(float));
 
 			// set flags for absolute translation, rotation, and scale
 			node0->animationProcessingDone = true;

@@ -6,13 +6,14 @@ CD3DRender::CD3DRender()
 }
 
 CD3DRender::~CD3DRender()
-{}
+= default;
 
-struct Vertex
+struct vertex
 {
-	D3DXVECTOR3  p;
-	D3DXVECTOR3  n;
-	float u, v;
+	D3DXVECTOR3 p;
+	D3DXVECTOR3 n;
+	float u;
+	float v;
 
 	enum FVF
 	{
@@ -20,10 +21,10 @@ struct Vertex
 	};
 };
 
-HRESULT CD3DRender::init(HWND hwnd, int Width, int Height)
+HRESULT CD3DRender::init(HWND hwnd, int width, int height)
 {
 	// Create the D3D object.
-	if (NULL == (g_D3D = Direct3DCreate9(D3D_SDK_VERSION)))
+	if (nullptr == (g_D3D = Direct3DCreate9(D3D_SDK_VERSION)))
 		return E_FAIL;
 	
 	g_D3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &d3ddm);
@@ -34,17 +35,13 @@ HRESULT CD3DRender::init(HWND hwnd, int Width, int Height)
 	d3dpp.BackBufferFormat = d3ddm.Format;
 	d3dpp.EnableAutoDepthStencil = TRUE;
 	d3dpp.AutoDepthStencilFormat = D3DFMT_D16;
-	d3dpp.BackBufferWidth = Width;
-	d3dpp.BackBufferHeight = Height;
+	d3dpp.BackBufferWidth = width;
+	d3dpp.BackBufferHeight = height;
 	d3dpp.MultiSampleType = D3DMULTISAMPLE_8_SAMPLES;
 
 	// Create the D3DDevice
-	if (FAILED(g_D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd,
-									D3DCREATE_SOFTWARE_VERTEXPROCESSING,
-									&d3dpp, &g_d3dDevice)))
-	{
+	if (FAILED(g_D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &g_d3dDevice)))
 		return E_FAIL;
-	}
 
 	g_d3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
 	g_d3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
@@ -52,15 +49,12 @@ HRESULT CD3DRender::init(HWND hwnd, int Width, int Height)
 	
 	D3DXMATRIX matProj;
 	D3DXMatrixPerspectiveFovLH(&matProj, D3DXToRadian(45.0f),
-		(float)Width / (float)Height, 0.1f, 100.0f);
+		float(width) / float(height), 0.1f, 100.0f);
 	g_d3dDevice->SetTransform(D3DTS_PROJECTION, &matProj);
-
-
 
 	return S_OK;
 }
 
-// Функция предварительного создания буферов.
 HRESULT CD3DRender::CreateBuffers(ushort EMGcount)
 {
 	g_pIndexBuffer = new LPDIRECT3DINDEXBUFFER9*[EMGcount];
@@ -73,22 +67,22 @@ HRESULT CD3DRender::CreateBuffers(ushort EMGcount)
 	VertexCount = new ushort[EMGcount];
 	VertexSize = new ushort[EMGcount];
 
-	DDSid = new Byte*[EMGcount];
+	DDSid = new byte*[EMGcount];
 
 	return S_OK;
 }
 
-// Функция заполнения массива буферов.
-HRESULT CD3DRender::LoadEMG(ushort CurrentEMG, ushort EMGsubmodels, Byte* DDSid, ushort* IndexCount,
-	ushort VertexCount, ushort VertexSize, ushort** IndiceArray, Byte* VertexArray)
+// Filling arrays.
+HRESULT CD3DRender::LoadEMG(ushort CurrentEMG, ushort EMGsubmodels, byte* DDSid, ushort* IndexCount,
+	ushort VertexCount, ushort VertexSize, ushort** IndiceArray, byte* VertexArray)
 {
-	// Заполнение массивов для использования в ProcessFrame().
+	// Filling arrays for using in ProcessFrame().
 	CD3DRender::IndexCount[CurrentEMG] = new ushort[EMGsubmodels];
 	CD3DRender::VertexCount[CurrentEMG] = VertexCount;
 	CD3DRender::VertexSize[CurrentEMG] = VertexSize;
 	CD3DRender::EMGsubmodels[CurrentEMG] = EMGsubmodels;
 
-	CD3DRender::DDSid[CurrentEMG] = new Byte[EMGsubmodels];
+	CD3DRender::DDSid[CurrentEMG] = new byte[EMGsubmodels];
 
 	g_pIndexBuffer[CurrentEMG] = new LPDIRECT3DINDEXBUFFER9[EMGsubmodels];
 
@@ -103,10 +97,10 @@ HRESULT CD3DRender::LoadEMG(ushort CurrentEMG, ushort EMGsubmodels, Byte* DDSid,
 			D3DFMT_INDEX16,
 			D3DPOOL_MANAGED,
 			&(g_pIndexBuffer[CurrentEMG][i]),
-			NULL);
-		WORD *pIndices = NULL;
+			nullptr);
+		WORD *pIndices = nullptr;
 
-		g_pIndexBuffer[CurrentEMG][i]->Lock(0, IndexCount[i] * sizeof(WORD), (void**)&pIndices, 0);
+		g_pIndexBuffer[CurrentEMG][i]->Lock(0, IndexCount[i] * sizeof(WORD), reinterpret_cast<void**>(&pIndices), 0);
 		memcpy(pIndices, IndiceArray[i], IndexCount[i] * sizeof(WORD));
 		g_pIndexBuffer[CurrentEMG][i]->Unlock();
 	}
@@ -114,26 +108,25 @@ HRESULT CD3DRender::LoadEMG(ushort CurrentEMG, ushort EMGsubmodels, Byte* DDSid,
 	// Create a vertex buffer...
 	g_d3dDevice->CreateVertexBuffer(VertexCount * VertexSize,
 		D3DUSAGE_WRITEONLY,
-		Vertex::FVF_Flags,
+		vertex::FVF_Flags,
 		D3DPOOL_MANAGED,
 		&(g_pVertexBuffer[CurrentEMG]),
-		NULL);
-	void *pVertices = NULL;
+		nullptr);
+	void *pVertices = nullptr;
 
-	g_pVertexBuffer[CurrentEMG]->Lock(0, VertexCount * VertexSize, (void**)&pVertices, 0);
+	g_pVertexBuffer[CurrentEMG]->Lock(0, VertexCount * VertexSize, static_cast<void**>(&pVertices), 0);
 	memcpy(pVertices, VertexArray, VertexCount * VertexSize);
 	g_pVertexBuffer[CurrentEMG]->Unlock();
 
 	return S_OK;
 }
 
-HRESULT CD3DRender::LoadDDS(ushort DDScount, unsigned long* DDSsize, Byte** DDScontent)
+HRESULT CD3DRender::LoadDDS(ushort DDScount, unsigned long* DDSsize, byte** DDScontent)
 {
 	g_Texture = new LPDIRECT3DTEXTURE9[DDScount];
 	CD3DRender::DDScount = DDScount;
 	for (ushort i = 0; i < DDScount; i++)
 		D3DXCreateTextureFromFileInMemory(g_d3dDevice, DDScontent[i], DDSsize[i], &g_Texture[i]);
-
 
 	return S_OK;
 }
@@ -144,24 +137,24 @@ HRESULT CD3DRender::Shutdown()
 	{
 		for (ushort a = 0; a < EMGsubmodels[i]; a++)
 		{
-			if (g_pIndexBuffer != NULL)
+			if (g_pIndexBuffer != nullptr)
 				g_pIndexBuffer[i][a]->Release();
 		}		
 
-		if (g_pVertexBuffer != NULL)
+		if (g_pVertexBuffer != nullptr)
 			g_pVertexBuffer[i]->Release();
 	}	
 
 	for (ushort i = 0; i < DDScount; i++)
 	{
-		if (g_Texture != NULL)
+		if (g_Texture != nullptr)
 			g_Texture[i]->Release();
 	}	
 
-    if( g_d3dDevice != NULL )
+    if( g_d3dDevice != nullptr )
         g_d3dDevice->Release();
 
-    if( g_D3D != NULL )
+    if( g_D3D != nullptr )
         g_D3D->Release();	
 
 	return S_OK;
@@ -176,12 +169,12 @@ HRESULT CD3DRender::OnMouseMove(short x, short y, bool RMousing)
 	{
 		if (bRMousing != RMousing)
 		{
-			m_zoom += (ptCurrentMousePosit.y - ptLastMousePosit.y) / (float)1000;
+			m_zoom += float(ptCurrentMousePosit.y - ptLastMousePosit.y) / float(1000);
 		}
 		else
 		{
-			g_fSpinX -= (ptCurrentMousePosit.x - ptLastMousePosit.x);
-			g_fSpinY -= (ptCurrentMousePosit.y - ptLastMousePosit.y);
+			g_fSpinX -= float(ptCurrentMousePosit.x - ptLastMousePosit.x);
+			g_fSpinY -= float(ptCurrentMousePosit.y - ptLastMousePosit.y);
 		}		
 	}
 
@@ -217,7 +210,7 @@ HRESULT CD3DRender::Reset()
 HRESULT CD3DRender::ProcessFrame()
 {
 	// Clear the backbuffer and the zbuffer
-	g_d3dDevice->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,
+	g_d3dDevice->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,
 						D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
 
 	D3DXMATRIX matTrans;
@@ -236,16 +229,16 @@ HRESULT CD3DRender::ProcessFrame()
 	// Begin the scene
 	if (SUCCEEDED(g_d3dDevice->BeginScene()))
 	{
-		if (g_pIndexBuffer != 0 && g_pVertexBuffer != 0)
+		if (g_pIndexBuffer != nullptr && g_pVertexBuffer != nullptr)
 		{
-			for (int i = 0; i < EMGcount; i++)
+			for (auto i = 0; i < EMGcount; i++)
 			{
 				g_d3dDevice->SetStreamSource(0, g_pVertexBuffer[i], 0, VertexSize[i]);
-				g_d3dDevice->SetFVF(Vertex::FVF_Flags);				
+				g_d3dDevice->SetFVF(vertex::FVF_Flags);				
 				
 				for (ushort a = 0; a < EMGsubmodels[i]; a++)
 				{
-					if (g_Texture != NULL)
+					if (g_Texture != nullptr)
 					{
 						g_d3dDevice->SetTexture(0, g_Texture[DDSid[i][a]]);
 
@@ -265,15 +258,15 @@ HRESULT CD3DRender::ProcessFrame()
 	}
 
 	// Present the backbuffer contents to the display
-	g_d3dDevice->Present(NULL, NULL, NULL, NULL);
+	g_d3dDevice->Present(nullptr, nullptr, nullptr, nullptr);
 
 	return S_OK;
 }
 
-HRESULT CD3DRender::Resize(int Width, int Height)
+HRESULT CD3DRender::Resize(int width, int height)
 {
-	d3dpp.BackBufferWidth = Width;
-	d3dpp.BackBufferHeight = Height;
+	d3dpp.BackBufferWidth = width;
+	d3dpp.BackBufferHeight = height;
 
 	g_d3dDevice->Reset(&d3dpp);
 
@@ -283,7 +276,7 @@ HRESULT CD3DRender::Resize(int Width, int Height)
 
 	D3DXMATRIX matProj;
 	D3DXMatrixPerspectiveFovLH(&matProj, D3DXToRadian(45.0f),
-		(float)Width / (float)Height, 0.1f, 100.0f);
+		float(width) / float(height), 0.1f, 100.0f);
 	g_d3dDevice->SetTransform(D3DTS_PROJECTION, &matProj);
 
 	return S_OK;

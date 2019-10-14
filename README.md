@@ -1,6 +1,6 @@
 # README #
 
-Super\Ultra Street Fighter 4 character model viewer and exporter.
+Super/Ultra Street Fighter 4 character model viewer and exporter.
 
 ### Features ###
 
