@@ -7,23 +7,23 @@ namespace SSF4ce {
 	typedef unsigned short ushort;
 	typedef unsigned long ulong;
 
-	value struct EMGReturn
+	ref struct EMG_Data
 	{
-		byte*		DDSid;			// Array of submodel's texture ids.
-		ushort		SubmodelCount;	// Submodels in EMG.
-		ushort*		IndexCount;		// Array of Indexes amount of each submodel.
-		ushort*		NodesCount;		// Array of Nodes amount of each submodel.
-		ushort		VertexCount;	// Amount of vertices.
-		ushort		VertexSize;		// Size of vertex.
-		ushort**	IndiceArray;	// Array of indeces blocks.
-		ushort**	NodesArray;		// Array of Nodes.
-		byte*		VertexArray;	// Array of vertices blocks.
+		array<byte>^ DDSid;					// Array of submodel's texture ids.
+		ushort SubmodelCount;				// Submodels in EMG.
+		array<ushort>^ IndexCount;			// Array of Indexes amount of each submodel.
+		array<ushort>^ NodesCount;			// Array of Nodes amount of each submodel.
+		ushort VertexCount;					// Amount of vertices.
+		ushort VertexSize;					// Size of vertex.
+		array<array<ushort>^>^ IndiceArray;	// Array of indeces blocks.
+		array<array<ushort>^>^ NodesArray;	// Array of Nodes.
+		array<byte>^ VertexArray;			// Array of vertices blocks.
 	};
 
 	// FileName, EMG position in EMO
-	inline EMGReturn ReadEMG(String^ FileName, int EMGposition)
+	inline EMG_Data^ ReadEMG(String^ FileName, int EMGposition)
 	{
-		EMGReturn return_value;
+		auto return_value = gcnew EMG_Data();
 
 		auto fs = File::OpenRead(FileName);
 		auto br = gcnew BinaryReader(fs);
@@ -47,27 +47,27 @@ namespace SSF4ce {
 		//==================================================================
 		fs->Position = EMGposition + 16 + texture_offset;
 
-		const auto offsets = new ushort[texture_count];
+		auto offsets = gcnew array<ushort>(texture_count);
 		for (auto i = 0; i < texture_count; i++)
 			offsets[i] = ushort(br->ReadUInt32());
 
-		const auto id = new byte[texture_count];
+		auto id = gcnew array <byte>(texture_count);
 		for (auto i = 0; i < texture_count; i++)
 		{
 			fs->Position = EMGposition + 16 + offsets[i] + 5;
 			id[i] = byte(br->ReadChar());
 		}
 
-		const auto DDSid = new byte[submodel_count];
+		auto DDSid = gcnew array<byte>(submodel_count);
 
 		//==================================================================
 		// Indeces and nodes
 		//==================================================================
-		const auto index_count = new ushort[submodel_count]; // Array of Indexes amount of each submodel.
-		const auto indices_array = new ushort*[submodel_count];
+		auto index_count = gcnew array<ushort>(submodel_count); // Array of Indexes amount of each submodel.
+		auto indices_array = gcnew array<array<ushort>^>(submodel_count);
 
-		const auto nodes_count = new ushort[submodel_count];
-		const auto nodes_array = new ushort*[submodel_count];
+		auto nodes_count = gcnew array<ushort>(submodel_count);
+		auto nodes_array = gcnew array<array<ushort>^>(submodel_count);
 
 		for (ushort i = 0; i < submodel_count; i++)
 		{
@@ -79,7 +79,7 @@ namespace SSF4ce {
 			
 			fs->Position = fs->Position + 32; // skipping name (32 bytes).
 
-			indices_array[i] = new ushort[index_count[i]];
+			indices_array[i] = gcnew array<ushort>(index_count[i]);
 
 			// Filling array with submesh indeces.
 			for (auto a = 0; a < index_count[i]; a++)
@@ -87,7 +87,7 @@ namespace SSF4ce {
 				indices_array[i][a] = ushort(br->ReadUInt16());
 			}
 
-			nodes_array[i] = new ushort[nodes_count[i]];
+			nodes_array[i] = gcnew array<ushort>(nodes_count[i]);
 
 			// Filling array with nodes.
 			for (auto a = 0; a < nodes_count[i]; a++)
@@ -100,7 +100,7 @@ namespace SSF4ce {
 		// Vertices
 		//==================================================================
 		fs->Position = EMGposition + 16 + vertex_offset; // Address of vertices
-		const auto vertex_array = new byte[vertex_count * vertex_size]; // Array of vertex data
+		auto vertex_array = gcnew array<byte>(vertex_count * vertex_size); // Array of vertex data
 		for (auto i = 0; i < vertex_count * vertex_size; i++)
 		{
 			vertex_array[i] = byte(br->ReadByte());
@@ -109,30 +109,30 @@ namespace SSF4ce {
 		br->Close();
 		fs->Close();
 
-		return_value.DDSid = DDSid;
-		return_value.SubmodelCount = submodel_count;
-		return_value.IndexCount	= index_count;
-		return_value.NodesCount	= nodes_count;
-		return_value.VertexCount = vertex_count;
-		return_value.VertexSize	= vertex_size;
-		return_value.IndiceArray = indices_array;
-		return_value.NodesArray	= nodes_array;
-		return_value.VertexArray = vertex_array;
+		return_value->DDSid = DDSid;
+		return_value->SubmodelCount = submodel_count;
+		return_value->IndexCount	= index_count;
+		return_value->NodesCount	= nodes_count;
+		return_value->VertexCount	= vertex_count;
+		return_value->VertexSize	= vertex_size;
+		return_value->IndiceArray	= indices_array;
+		return_value->NodesArray	= nodes_array;
+		return_value->VertexArray	= vertex_array;
 		return return_value;
 	}
 
 	//==================================================================
 
-	value struct EMBReturn
+	ref struct EMB_Data
 	{
 		ushort DDScount;	// DDS ammount in EMB.
-		ulong* DDSsize;		// Size of each DDS.
-		byte** DDSArray;	// DDS itself.
+		array<ulong>^ DDSsize;		// Size of each DDS.
+		array<array<byte>^>^ DDSArray;	// DDS itself.
 	};
 
-	inline EMBReturn ReadEMB(String^ FileName)
+	inline EMB_Data^ ReadEMB(String^ FileName)
 	{
-		EMBReturn return_value;
+		const auto return_value = gcnew EMB_Data();
 
 		auto fs = File::OpenRead(FileName);
 		auto br = gcnew BinaryReader(fs);
@@ -142,9 +142,9 @@ namespace SSF4ce {
 		const ushort DDScount = br->ReadInt16();
 
 		//
-		const auto DDSoffset = new ulong[DDScount];
-		const auto DDSsize = new ulong[DDScount];
-		const auto DDSArray = new byte*[DDScount];
+		auto DDSoffset = gcnew array<ulong>(DDScount);
+		auto DDSsize = gcnew array<ulong>(DDScount);
+		auto DDSArray = gcnew array<array<byte>^>(DDScount);
 
 		// List of offsets to DDS and sizes.
 		fs->Position = 32;
@@ -157,7 +157,7 @@ namespace SSF4ce {
 		//
 		for (ulong i = 0; i < DDScount; i++)
 		{
-			DDSArray[i] = new byte[DDSsize[i]];
+			DDSArray[i] = gcnew array<byte>(DDSsize[i]);
 
 			fs->Position = 32 + DDSoffset[i];
 
@@ -170,25 +170,25 @@ namespace SSF4ce {
 		br->Close();
 		fs->Close();
 
-		return_value.DDScount = DDScount;
-		return_value.DDSsize = DDSsize;
-		return_value.DDSArray = DDSArray;		
+		return_value->DDScount = DDScount;
+		return_value->DDSsize = DDSsize;
+		return_value->DDSArray = DDSArray;
 		return return_value;
 	}
 
 	//==================================================================
 
-	value struct SkeletonReturn
+	ref struct Skeleton_Data
 	{
 		ushort	NodesCount;
-		char**	NodeName;
-		short*	ParentNodeArray;
-		byte**	Matrix4x4;
+		array<String^>^ NodeName;
+		array<short>^ ParentNodeArray;
+		array<array<byte>^>^ Matrix4x4;
 	};
 
-	inline SkeletonReturn ReadSkeleton(String^ FileName, byte offset) // EMO - 16, EMA - 12
+	inline Skeleton_Data^ ReadSkeleton(String^ FileName, byte offset) // EMO - 16, EMA - 12
 	{
-		SkeletonReturn return_value;
+		const auto return_value = gcnew Skeleton_Data();
 
 		auto fs = File::OpenRead(FileName);
 		auto br = gcnew BinaryReader(fs);
@@ -206,11 +206,11 @@ namespace SSF4ce {
 		//==================================================================
 
 		fs->Position = skeletal_info_offset + names_offsets_offset; // Offsets to names.
-		const auto nodes_names_offsets = new unsigned int[nodes_count]; // Reading.
+		auto nodes_names_offsets = gcnew array<unsigned int>(nodes_count); // Reading.
 		for (auto i = 0; i < nodes_count; i++)
 			nodes_names_offsets[i] = br->ReadUInt32();
 
-		const auto node_name = new char*[nodes_count];
+		auto node_name = gcnew array<String^>(nodes_count);
 
 		for (auto i = 0; i < nodes_count; i++)
 		{
@@ -219,21 +219,23 @@ namespace SSF4ce {
 			ushort size = 1; // Length of name for array creation.
 			while (br->ReadChar() != 0)
 				size++;
-
-			node_name[i] = new char[size];
+			const auto buffer = new char[size];
 
 			fs->Position = fs->Position - size; // Position return.
 
 			for (auto a = 0; a < size; a++) // Reading to array.
-				node_name[i][a] = char(br->ReadChar());
+				buffer[a] = char(br->ReadChar());
+
+			node_name[i] = gcnew String(buffer);
+			delete[] buffer;
 		}
 
 		//==================================================================
 
 		fs->Position = skeletal_info_offset + start_offset; // Nodes.
 
-		const auto ParentNodeArray = new short[nodes_count];
-		const auto Matrix4x4 = new byte*[nodes_count];
+		auto ParentNodeArray = gcnew array<short>(nodes_count);
+		auto Matrix4x4 = gcnew array<array<byte>^>(nodes_count);
 
 		for (auto i = 0; i < nodes_count; i++)
 		{
@@ -245,7 +247,7 @@ namespace SSF4ce {
 
 			fs->Position = fs->Position + 14; // Skipping to position about matrix.
 
-			Matrix4x4[i] = new byte[64];
+			Matrix4x4[i] = gcnew array<byte>(64);
 			for (ushort a = 0; a < 64; a++)
 				Matrix4x4[i][a] = br->ReadByte();
 		}
@@ -253,34 +255,34 @@ namespace SSF4ce {
 		br->Close();
 		fs->Close();
 
-		return_value.NodesCount = nodes_count;
-		return_value.NodeName = node_name;
-		return_value.ParentNodeArray = ParentNodeArray;
-		return_value.Matrix4x4 = Matrix4x4;
+		return_value->NodesCount = nodes_count;
+		return_value->NodeName = node_name;
+		return_value->ParentNodeArray = ParentNodeArray;
+		return_value->Matrix4x4 = Matrix4x4;
 		return return_value;
 	}
 
 	//==================================================================
 
-	value struct EMAReturn
+	ref struct EMA_Data
 	{
 		ushort AnimationCount;
-		char** AnimationName;
+		array<String^>^ AnimationName;
 
-		ushort* Duration;
-		ushort** NodeIndex;
-		byte** NodeTransformType;
-		byte** TransformFlag;
-		ushort** NodeStepCount;
-		ushort* cmdOffsetCount;		
-		ushort*** Frame;		
-		float*** NodeValue;
-		float*** NodeTangentValue;		
+		array<ushort>^ Duration;
+		array<array<ushort>^>^ NodeIndex;
+		array<array<byte>^>^ NodeTransformType;
+		array<array<byte>^>^ TransformFlag;
+		array<array<ushort>^>^ NodeStepCount;
+		array<ushort>^ cmdOffsetCount;
+		array<array<array<ushort>^>^>^ Frame;
+		array<array<array<float>^>^>^ NodeValue;
+		array<array<array<float>^>^>^ NodeTangentValue;
 	};
 
-	inline EMAReturn ReadEMA(String^ FileName)
+	inline EMA_Data^ ReadEMA(String^ FileName)
 	{
-		EMAReturn return_value;
+		const auto return_value = gcnew EMA_Data();
 
 		auto fs = File::OpenRead(FileName);
 		auto br = gcnew BinaryReader(fs);
@@ -292,21 +294,21 @@ namespace SSF4ce {
 		const auto animation_count = br->ReadUInt16();
 
 		fs->Position = header_size; // Animations offsets
-		const auto animation_offsets = new ulong[animation_count];
+		auto animation_offsets = gcnew array<ulong>(animation_count);
 		for (auto i = 0; i < animation_count; i++)
 			animation_offsets[i] = br->ReadUInt32(); //
 
-		const auto animation_name = new char*[animation_count];
+		auto animation_name = gcnew array<String^>(animation_count);
 
-		const auto duration = new ushort[animation_count];
-		const auto node_index = new ushort*[animation_count];
-		const auto cmd_offset_count = new ushort[animation_count];
-		const auto node_step_count = new ushort*[animation_count];
-		const auto frame = new ushort**[animation_count];
-		const auto node_transform_type = new byte*[animation_count];
-		const auto node_value = new float**[animation_count];
-		const auto node_tangent_value = new float**[animation_count];
-		const auto transform_flag = new byte*[animation_count];
+		auto duration = gcnew array<ushort>(animation_count);
+		auto node_index = gcnew array<array<ushort>^>(animation_count);
+		auto cmd_offset_count = gcnew array<ushort>(animation_count);
+		auto node_step_count = gcnew array<array<ushort>^>(animation_count);
+		auto frame = gcnew array<array<array<ushort>^>^>(animation_count);
+		auto node_transform_type = gcnew array<array<byte>^>(animation_count);
+		auto node_value = gcnew array<array<array<float>^>^>(animation_count);
+		auto node_tangent_value = gcnew array<array<array<float>^>^>(animation_count);
+		auto transform_flag = gcnew array<array<byte>^>(animation_count);
 
 		for (auto i = 0; i < animation_count; i++)
 		{
@@ -324,31 +326,33 @@ namespace SSF4ce {
 			ushort size = 1; // Length of name for array creation.
 			while (br->ReadChar() != 0)
 				size++;
-			animation_name[i] = new char[size];
+			const auto buffer = new char[size];
 			fs->Position = fs->Position - size; // Position return.
-			for (ushort a = 0; a < size; a++) // Reading in array.
-				animation_name[i][a] = char(br->ReadChar());				
+			for (auto a = 0; a < size; a++) // Reading in array.
+				buffer[a] = char(br->ReadChar());
+			animation_name[i] = gcnew String(buffer);
+			delete[] buffer;
 			//==================================================================
 
 			fs->Position = animation_offsets[i] + values_offset;
-			const auto Values = new float[value_count];
-			for (ulong Value = 0; Value < value_count; Value++)
-				Values[Value] = br->ReadSingle();
+			auto values = gcnew array<float>(value_count);
+			for (ulong value = 0; value < value_count; value++)
+				values[value] = br->ReadSingle();
 
 			//==================================================================
 
 			fs->Position = animation_offsets[i] + 20;
-			const auto cmd_offsets = new ulong[cmd_offset_count[i]];
-			for (ulong cmd_offset = 0; cmd_offset < cmd_offset_count[i]; cmd_offset++)
+			auto cmd_offsets = gcnew array<ulong>(cmd_offset_count[i]);
+			for (auto cmd_offset = 0; cmd_offset < cmd_offset_count[i]; cmd_offset++)
 				cmd_offsets[cmd_offset] = br->ReadUInt32();
 
-			node_index[i] = new ushort[cmd_offset_count[i]];
-			node_step_count[i] = new ushort[cmd_offset_count[i]];
-			frame[i] = new ushort*[cmd_offset_count[i]];
-			node_transform_type[i] = new Byte[cmd_offset_count[i]];
-			node_value[i] = new float*[cmd_offset_count[i]];
-			node_tangent_value[i] = new float*[cmd_offset_count[i]];
-			transform_flag[i] = new Byte[cmd_offset_count[i]];
+			node_index[i] = gcnew array<ushort>(cmd_offset_count[i]);
+			node_step_count[i] = gcnew array<ushort>(cmd_offset_count[i]);
+			frame[i] = gcnew array<array<ushort>^>(cmd_offset_count[i]);
+			node_transform_type[i] = gcnew array<byte>(cmd_offset_count[i]);
+			node_value[i] = gcnew array<array<float>^>(cmd_offset_count[i]);
+			node_tangent_value[i] = gcnew array<array<float>^>(cmd_offset_count[i]);
+			transform_flag[i] = gcnew array<byte>(cmd_offset_count[i]);
 
 			for (ulong cmd_offset = 0; cmd_offset < cmd_offset_count[i]; cmd_offset++)
 			{
@@ -360,9 +364,9 @@ namespace SSF4ce {
 				node_step_count[i][cmd_offset] = br->ReadUInt16(); //(stepCount))
 				const auto indices_offset = br->ReadUInt16(); //(indicesOffset));
 
-				frame[i][cmd_offset] = new ushort[node_step_count[i][cmd_offset]];
-				node_value[i][cmd_offset] = new float[node_step_count[i][cmd_offset]];
-				node_tangent_value[i][cmd_offset] = new float[node_step_count[i][cmd_offset]];
+				frame[i][cmd_offset] = gcnew array<ushort>(node_step_count[i][cmd_offset]);
+				node_value[i][cmd_offset] = gcnew array<float>(node_step_count[i][cmd_offset]);
+				node_tangent_value[i][cmd_offset] = gcnew array<float>(node_step_count[i][cmd_offset]);
 
 				for (ushort a = 0; a < node_step_count[i][cmd_offset]; a++)
 				{
@@ -380,23 +384,23 @@ namespace SSF4ce {
 					{
 						const ulong index = br->ReadUInt32();
 						const unsigned int value_index = index & 0x3FFFFFFF;
-						node_value[i][cmd_offset][a] = Values[value_index];
+						node_value[i][cmd_offset][a] = values[value_index];
 
 						const byte high_order_bits = index >> 30 & 0x03;
 						const auto tangent_index = high_order_bits == 0 ? ~0 : value_index + high_order_bits;
 						if (tangent_index != ~0)
-							node_tangent_value[i][cmd_offset][a] = Values[tangent_index];
+							node_tangent_value[i][cmd_offset][a] = values[tangent_index];
 					}						
 					else
 					{
 						const auto index = br->ReadUInt16();
 						const unsigned int value_index = index & 0x3FFF;
-						node_value[i][cmd_offset][a] = Values[value_index];
+						node_value[i][cmd_offset][a] = values[value_index];
 
 						const byte high_order_bits = index >> 14 & 0x03;
 						const auto tangent_index = high_order_bits == 0 ? ~0 : value_index + high_order_bits;
 						if (tangent_index != ~0)
-							node_tangent_value[i][cmd_offset][a] = Values[tangent_index];
+							node_tangent_value[i][cmd_offset][a] = values[tangent_index];
 					}
 				}
 			}
@@ -405,18 +409,18 @@ namespace SSF4ce {
 		br->Close();
 		fs->Close();
 
-		return_value.AnimationCount = animation_count;
-		return_value.AnimationName = animation_name;
+		return_value->AnimationCount = animation_count;
+		return_value->AnimationName = animation_name;
 
-		return_value.Duration = duration;
-		return_value.NodeIndex = node_index;
-		return_value.NodeTransformType = node_transform_type;
-		return_value.TransformFlag = transform_flag;
-		return_value.NodeStepCount = node_step_count;
-		return_value.cmdOffsetCount = cmd_offset_count;		
-		return_value.Frame = frame;		
-		return_value.NodeValue = node_value;
-		return_value.NodeTangentValue = node_tangent_value;
+		return_value->Duration = duration;
+		return_value->NodeIndex = node_index;
+		return_value->NodeTransformType = node_transform_type;
+		return_value->TransformFlag = transform_flag;
+		return_value->NodeStepCount = node_step_count;
+		return_value->cmdOffsetCount = cmd_offset_count;
+		return_value->Frame = frame;
+		return_value->NodeValue = node_value;
+		return_value->NodeTangentValue = node_tangent_value;
 		
 		return return_value;
 	}
