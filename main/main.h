@@ -109,9 +109,11 @@ namespace SSF4ce {
 		void InitializeComponent(void)
 		{
 			this->components = (gcnew System::ComponentModel::Container());
-			System::Windows::Forms::TreeNode^  treeNode1 = (gcnew System::Windows::Forms::TreeNode(L"Mesh"));
-			System::Windows::Forms::TreeNode^  treeNode2 = (gcnew System::Windows::Forms::TreeNode(L"Skins"));
-			System::Windows::Forms::TreeNode^  treeNode3 = (gcnew System::Windows::Forms::TreeNode(L"Animations"));
+			System::Windows::Forms::TreeNode^ treeNode1 = (gcnew System::Windows::Forms::TreeNode(L"Mesh"));
+			System::Windows::Forms::TreeNode^ treeNode2 = (gcnew System::Windows::Forms::TreeNode(L"Skins"));
+			System::Windows::Forms::TreeNode^ treeNode3 = (gcnew System::Windows::Forms::TreeNode(L"Animations"));
+			System::Windows::Forms::TreeNode^ treeNode4 = (gcnew System::Windows::Forms::TreeNode(L"Animations - UC1"));
+			System::Windows::Forms::TreeNode^ treeNode5 = (gcnew System::Windows::Forms::TreeNode(L"Animations - UC2"));
 			this->statusStrip1 = (gcnew System::Windows::Forms::StatusStrip());
 			this->toolStripStatusLabel1 = (gcnew System::Windows::Forms::ToolStripStatusLabel());
 			this->toolStrip1 = (gcnew System::Windows::Forms::ToolStrip());
@@ -298,7 +300,14 @@ namespace SSF4ce {
 			treeNode2->Text = L"Skins";
 			treeNode3->Name = L"Node2";
 			treeNode3->Text = L"Animations";
-			this->treeView1->Nodes->AddRange(gcnew cli::array< System::Windows::Forms::TreeNode^  >(3) { treeNode1, treeNode2, treeNode3 });
+			treeNode4->Name = L"Node3";
+			treeNode4->Text = L"Animations - UC1";
+			treeNode5->Name = L"Node4";
+			treeNode5->Text = L"Animations - UC2";
+			this->treeView1->Nodes->AddRange(gcnew cli::array< System::Windows::Forms::TreeNode^  >(5) {
+				treeNode1, treeNode2, treeNode3,
+					treeNode4, treeNode5
+			});
 			this->treeView1->Size = System::Drawing::Size(187, 466);
 			this->treeView1->TabIndex = 0;
 			this->treeView1->AfterCheck += gcnew System::Windows::Forms::TreeViewEventHandler(this, &MainForm::treeView1_AfterCheck);
@@ -661,6 +670,8 @@ private: System::Void openToolStripMenuItem_Click(System::Object^  sender, Syste
 							treeView1->Nodes[1]->Nodes->Add(gcnew TreeNode("Normal map"));
 							treeView1->Nodes[1]->Nodes[treeView1->Nodes[1]->LastNode->Index]->Checked = true;
 						}
+
+						br2->Close();
 					}
 
 					//==================================================================
@@ -670,32 +681,9 @@ private: System::Void openToolStripMenuItem_Click(System::Object^  sender, Syste
 					array<Char>^ trim_chars2 = { '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 					const auto name2 = name->TrimEnd(trim_chars2);
 
-					if (!File::Exists(path + "\\" + name2 + ".obj.ema"))
-					{
-						//
-					}
-					else
-					{
-						fs = File::OpenRead(path + "\\" + name2 + ".obj.ema");
-						auto br2 = gcnew BinaryReader(fs);
-
-						if (String::Compare(Encoding::UTF8->GetString(br2->ReadBytes(4)), "#EMA", true) == 0) // If 0, continue reading.
-						{
-							treeView1->Nodes[2]->Checked = true;
-
-							auto EMA_data = ReadEMA(path + "\\" + name2 + ".obj.ema");
-							
-							for (ushort i = 0; i < EMA_data->AnimationCount; i++)
-							{
-								const auto animation_name = gcnew String(EMA_data->AnimationName[i]);
-								treeView1->Nodes[2]->Nodes->Add(gcnew TreeNode(i+1 + ". " + animation_name));
-								treeView1->Nodes[2]->Nodes[i]->Checked = true;
-							}
-
-							delete EMA_data;
-							treeView1->Nodes[2]->Expand();
-						}						
-					}
+					OpenAnimFile(path, name2, 0); // .obj.ema
+					OpenAnimFile(path, name2, 1); // .uc1.ema
+					OpenAnimFile(path, name2, 2); // .uc2.ema
 				}
 				else
 				{
@@ -705,6 +693,55 @@ private: System::Void openToolStripMenuItem_Click(System::Object^  sender, Syste
 				br->Close();
 				fs->Close();
 			}
+}
+private: System::Void OpenAnimFile(String^ path, String^ name, byte file)
+{
+	auto node = 2;
+	String^ str;
+	switch (file)
+	{
+		case 1:
+			str = ".uc1";
+			node = 3;
+		break;
+		case 2:
+			str = ".uc2";
+			node = 4;
+			break;
+		default:
+			str = ".obj";
+			break;
+	}
+
+	if (!File::Exists(path + "\\" + name + str + ".ema"))
+	{
+		//
+	}
+	else
+	{
+		auto fs = File::OpenRead(path + "\\" + name + str + ".ema");
+		auto br2 = gcnew BinaryReader(fs);
+
+		if (String::Compare(Encoding::UTF8->GetString(br2->ReadBytes(4)), "#EMA", true) == 0) // If 0, continue reading.
+		{
+			treeView1->Nodes[node]->Checked = true;
+
+			auto EMA_data = ReadEMA(path + "\\" + name + str + ".ema");
+
+			for (ushort i = 0; i < EMA_data->AnimationCount; i++)
+			{
+				const auto animation_name = gcnew String(EMA_data->AnimationName[i]);
+				treeView1->Nodes[node]->Nodes->Add(gcnew TreeNode(i + 1 + ". " + animation_name));
+				treeView1->Nodes[node]->Nodes[i]->Checked = true;
+			}
+
+			delete EMA_data;
+			treeView1->Nodes[node]->Expand();
+		}
+
+		br2->Close();
+		fs->Close();
+	}
 }
 private: System::Void button1_Click(System::Object^  sender, System::EventArgs^  e) {
 			 treeView1->Enabled = false;
@@ -1079,117 +1116,152 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 
 			 if(treeView1->Nodes[2]->Checked == true) // animations
 			 {
-				 auto saveFileDialog1 = gcnew SaveFileDialog();
-				 array<Char>^ trim_chars2 = { '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-				 auto name2 = name->TrimEnd(trim_chars2);
-				 saveFileDialog1->FileName = name2 + "_anim";
-				 saveFileDialog1->Filter = "SMD animation|*.smd";
-				 saveFileDialog1->RestoreDirectory = true;
-
-				 if (saveFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK)
-				 {
-					 ushort animation_id;
-					 auto my_enum = treeView1->Nodes[2]->Nodes->GetEnumerator();
-
-					 auto anim_name = gcnew String(path + "\\" + name2 + ".obj.ema");
-					 m_D3DWrap->WrapSetup(anim_name, 0);
-
-					 while (my_enum->MoveNext())
-					 {
-						 auto node = safe_cast<TreeNode^>(my_enum->Current);
-						 if (node->Checked)
-						 {
-							 animation_id = node->Index;
-
-							 auto output_path = Path::GetDirectoryName(saveFileDialog1->FileName);
-
-							 auto sw = gcnew StreamWriter(output_path + "\\" + node->Text + ".smd");
-
-							 auto en_us = gcnew CultureInfo("en-US");
-
-							 auto scale = ushort::Parse(toolStripTextBox1->Text);
-
-							 sw->WriteLine("version 1");
-
-							 //==================================================================
-							 // Nodes tree.
-							 //==================================================================					 
-
-							 auto skeleton_data = ReadSkeleton(path + "\\" + name2 + ".obj.ema", 12);
-
-							 sw->WriteLine("nodes");
-
-							 for (ushort i = 0; i < skeleton_data->NodesCount; i++) // 
-							 {
-								 auto node_name = skeleton_data->NodeName[i];
-								 sw->WriteLine(i + " " + "\"" + node_name + "\"" + " " + skeleton_data->ParentNodeArray[i]); //" \"root\"  child+1
-							 }
-
-							 sw->WriteLine("end");
-
-							 //==================================================================
-							 // Nodes position.
-							 //==================================================================
-
-							 sw->WriteLine("skeleton");
-
-							 auto EMA_data = ReadEMA(path + "\\" + name2 + ".obj.ema");
-
-							 auto animation_name = gcnew String(EMA_data->AnimationName[animation_id]);
-							 int duration = EMA_data->Duration[animation_id];
-
-							 float structure[500][6];
-							 std::string names[500];
-
-							 sw->WriteLine("time 0");
-							 m_D3DWrap->WrapUpdate(structure, names, "ref", 0);
-							 for (auto i = 0; i < skeleton_data->NodesCount; i++)
-							 {
-								 if (i == 0 )
-									 sw->WriteLine("0 0 0 0 0 0 0"); //1.570796 3.141592
-								 else if (i != 0)
-								 {
-									 sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
-									 sw->WriteLine(structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us));
-								 }
-							 }
-
-							 for (ushort time = 0; time < duration; time++)
-							 {
-								 sw->WriteLine("time " + (time + 1));
-								 m_D3DWrap->WrapUpdate(structure, names, animation_name, time);
-								 for (auto i = 0; i < skeleton_data->NodesCount; i++)
-								 {
-									 if (i == 0 && time == 0)
-										 sw->WriteLine("0 0 0 0 0 0 0"); //1.570796 3.141592
-									 else if (i != 0)
-									 {
-										 auto name3(names[i]);
-										 auto nameclr = gcnew String(name3.c_str());
-
-										 if (nameclr == "RLegRoot" || nameclr == "LLegRoot" || nameclr == "LArmRoot" || nameclr == "RArmRoot")
-										 { }	
-										 else
-										 {
-											 sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
-											 sw->WriteLine(structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us));
-										 }
-									 }
-								 }
-							 }
-
-							 delete skeleton_data;
-							 delete EMA_data;
-							 sw->WriteLine("end");
-							 sw->Close();
-						 }
-					 }					
-
-					 MessageBox::Show("Animations extracted", "Done", MessageBoxButtons::OK);
-				 }				 
+				 SaveAnimFile(path, name, 0); // .obj.ema
 			 }
-			 
+
+			 if (treeView1->Nodes[3]->Checked == true) // animations
+			 {
+				 SaveAnimFile(path, name, 1); // .uc1.ema
+			 }
+
+			 if (treeView1->Nodes[4]->Checked == true) // animations
+			 {
+				 SaveAnimFile(path, name, 2); // .uc2.ema
+			 }
+
 			 treeView1->Enabled = true;
+}
+private: System::Void SaveAnimFile(String^ path, String^ name, byte file)
+{
+	auto node = 2;
+	String^ str;
+	String^ post_str = "";
+	switch (file)
+	{
+	case 1:
+		str = ".uc1";
+		post_str = "_uc1";
+		node = 3;
+		break;
+	case 2:
+		str = ".uc2";
+		post_str = "_uc2";
+		node = 4;
+		break;
+	default:
+		str = ".obj";
+		break;
+	}
+
+	auto saveFileDialog1 = gcnew SaveFileDialog();
+	array<Char>^ trim_chars2 = { '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+	auto name2 = name->TrimEnd(trim_chars2);
+	saveFileDialog1->FileName = name2 + "_anim" + post_str;
+	saveFileDialog1->Filter = "SMD animation|*.smd";
+	saveFileDialog1->RestoreDirectory = true;
+
+	if (saveFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK)
+	{
+		ushort animation_id;
+		auto my_enum = treeView1->Nodes[node]->Nodes->GetEnumerator();
+
+		auto anim_name = gcnew String(path + "\\" + name2 + str + ".ema");
+		m_D3DWrap->WrapSetup(anim_name, 0);
+
+		while (my_enum->MoveNext())
+		{
+			auto node = safe_cast<TreeNode^>(my_enum->Current);
+			if (node->Checked)
+			{
+				animation_id = node->Index;
+
+				auto output_path = Path::GetDirectoryName(saveFileDialog1->FileName);
+
+				auto sw = gcnew StreamWriter(output_path + "\\" + node->Text + ".smd");
+
+				auto en_us = gcnew CultureInfo("en-US");
+
+				auto scale = ushort::Parse(toolStripTextBox1->Text);
+
+				sw->WriteLine("version 1");
+
+				//==================================================================
+				// Nodes tree.
+				//==================================================================					 
+
+				auto skeleton_data = ReadSkeleton(path + "\\" + name2 + str + ".ema", 12);
+
+				sw->WriteLine("nodes");
+
+				for (ushort i = 0; i < skeleton_data->NodesCount; i++) // 
+				{
+					auto node_name = skeleton_data->NodeName[i];
+					sw->WriteLine(i + " " + "\"" + node_name + "\"" + " " + skeleton_data->ParentNodeArray[i]); //" \"root\"  child+1
+				}
+
+				sw->WriteLine("end");
+
+				//==================================================================
+				// Nodes position.
+				//==================================================================
+
+				sw->WriteLine("skeleton");
+
+				auto EMA_data = ReadEMA(path + "\\" + name2 + str + ".ema");
+
+				auto animation_name = gcnew String(EMA_data->AnimationName[animation_id]);
+				int duration = EMA_data->Duration[animation_id];
+
+				float structure[500][6];
+				std::string names[500];
+
+				sw->WriteLine("time 0");
+				m_D3DWrap->WrapUpdate(structure, names, "ref", 0);
+				for (auto i = 0; i < skeleton_data->NodesCount; i++)
+				{
+					if (i == 0)
+						sw->WriteLine("0 0 0 0 0 0 0"); //1.570796 3.141592
+					else if (i != 0)
+					{
+						sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
+						sw->WriteLine(structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us));
+					}
+				}
+
+				for (ushort time = 0; time < duration; time++)
+				{
+					sw->WriteLine("time " + (time + 1));
+					m_D3DWrap->WrapUpdate(structure, names, animation_name, time);
+					for (auto i = 0; i < skeleton_data->NodesCount; i++)
+					{
+						if (i == 0 && time == 0)
+							sw->WriteLine("0 0 0 0 0 0 0"); //1.570796 3.141592
+						else if (i != 0)
+						{
+							auto name3(names[i]);
+							auto nameclr = gcnew String(name3.c_str());
+
+							if (nameclr == "RLegRoot" || nameclr == "LLegRoot" || nameclr == "LArmRoot" || nameclr == "RArmRoot")
+							{
+							}
+							else
+							{
+								sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
+								sw->WriteLine(structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us));
+							}
+						}
+					}
+				}
+
+				delete skeleton_data;
+				delete EMA_data;
+				sw->WriteLine("end");
+				sw->Close();
+			}
+		}
+
+		MessageBox::Show("Animations extracted", "Done", MessageBoxButtons::OK);
+	}
 }
 private: System::Void treeView1_AfterCheck(System::Object^  sender, System::Windows::Forms::TreeViewEventArgs^  e) {
 			 //==================================================================
