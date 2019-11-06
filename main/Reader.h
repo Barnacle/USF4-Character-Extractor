@@ -196,6 +196,24 @@ namespace SSF4ce {
 		fs->Position = offset; // Skipping to position about nodes.
 		const auto skeletal_info_offset = br->ReadUInt32();
 
+		if(skeletal_info_offset == 0)
+		{
+			br->Close();
+			fs->Close();
+
+			auto node_name = gcnew array<String^>(1);
+			node_name[0] = "camera";
+
+			auto ParentNodeArray = gcnew array<short>(1);
+			ParentNodeArray[0] = 0xffff;
+
+			return_value->NodesCount = 1;
+			return_value->NodeName = node_name;
+			return_value->ParentNodeArray = ParentNodeArray;
+			return_value->Matrix4x4 = nullptr;
+			return return_value;
+		}
+
 		fs->Position = skeletal_info_offset; // Skipping to data about nodes.
 		const auto nodes_count = br->ReadUInt16(); // Nodes amount.
 

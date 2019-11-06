@@ -603,83 +603,92 @@ public:
 		file.seekg(emaBlockOffset + headerSize, std::ios::beg);
 		file.read(reinterpret_cast<char*>(&animationDataAddresses.front()), sizeof (unsigned long)*animationCount);
 
-		unsigned long skeletonAdress = emaBlockOffset + skeletonOffset;
-
-		file.seekg(skeletonAdress, std::ios::beg);
-		EMASkelettonHeader skelettonHeader;
-		file.read(reinterpret_cast<char*>(&skelettonHeader), sizeof (EMASkelettonHeader));
-
-		m_nodeCount = skelettonHeader.nodeCount;
-
-		std::vector<unsigned long> skeletonNameAddresses;
-		skeletonNameAddresses.resize(m_nodeCount);
-		file.seekg(skeletonAdress + skelettonHeader.skeletonNameAddressOffset, std::ios::beg);
-		file.read(reinterpret_cast<char*>(&skeletonNameAddresses.front()), sizeof (unsigned long)*m_nodeCount);
-
-		for (unsigned int i = 0; i<m_nodeCount; i++)
+		if(skeletonOffset != 0)
 		{
-			file.seekg(skeletonAdress + skeletonNameAddresses[i], std::ios::beg);
-			m_skelettonNodeNames.insert(std::map<unsigned short, std::string>::value_type(i, readZeroTerminatedString(file)));
-		}
+			unsigned long skeletonAdress = emaBlockOffset + skeletonOffset;
 
-		//Nodes
-		file.seekg(skeletonAdress + skelettonHeader.skeletonStartOffset, std::ios::beg);
-		for (unsigned int i = 0; i<m_nodeCount; i++)
-		{
-			EMASkelettonNodeTemp skelettonNodeTemp{};
-			file.read(reinterpret_cast<char*>(&skelettonNodeTemp), sizeof (EMASkelettonNodeTemp));
+			file.seekg(skeletonAdress, std::ios::beg);
+			EMASkelettonHeader skelettonHeader;
+			file.read(reinterpret_cast<char*>(&skelettonHeader), sizeof(EMASkelettonHeader));
 
-			EMASkelettonNode skelettonNode{};
-			skelettonNode.number = i;
-			skelettonNode.parent = skelettonNodeTemp.parent;
-			skelettonNode.child1 = skelettonNodeTemp.child1;
-			skelettonNode.sibling = skelettonNodeTemp.child2;
-			skelettonNode.flags = skelettonNodeTemp.flags;
-			skelettonNode.unknownScale = skelettonNodeTemp.unknown4;
-			memcpy(skelettonNode.matrix, skelettonNodeTemp.matrix, 16 * sizeof(float));
+			m_nodeCount = skelettonHeader.nodeCount;
 
-			decomposeMatrix(skelettonNode.rotation, skelettonNode.scale, skelettonNode.translation, skelettonNode.matrix, skelettonNode.rotationQuaternion);
+			std::vector<unsigned long> skeletonNameAddresses;
+			skeletonNameAddresses.resize(m_nodeCount);
+			file.seekg(skeletonAdress + skelettonHeader.skeletonNameAddressOffset, std::ios::beg);
+			file.read(reinterpret_cast<char*>(&skeletonNameAddresses.front()), sizeof(unsigned long) * m_nodeCount);
 
-			m_skelettonNodes.insert(SkelettonNodePerNumberMap::value_type(i, skelettonNode));
-		}
+			for (unsigned int i = 0; i < m_nodeCount; i++)
+			{
+				file.seekg(skeletonAdress + skeletonNameAddresses[i], std::ios::beg);
+				m_skelettonNodeNames.insert(std::map<unsigned short, std::string>::value_type(i, readZeroTerminatedString(file)));
+			}
 
-		//Matrix
-		if (skelettonHeader.matrixOffset != 0)
-		{
-			file.seekg(skeletonAdress + skelettonHeader.matrixOffset, std::ios::beg);
-			file.read(reinterpret_cast<char*>(m_matrix), sizeof (float)* 16);
-			// [m00 m01 m02]
-			// [m10 m11 m12]
-			// [m20 m21 m22]
-			// heading = Math.atan2(-m.m20,m.m00);
-			// bank = Math.atan2(-m.m12,m.m11);
-			// attitude = Math.asin(m.m10);
-			float translation[] = { -m_matrix[12], m_matrix[14], m_matrix[13] };
-			auto rx = atan2(-m_matrix[2], m_matrix[0]);
-			auto ry = atan2(-m_matrix[9], m_matrix[5]);
-			auto rz = asin(m_matrix[1]);
+			//Nodes
+			file.seekg(skeletonAdress + skelettonHeader.skeletonStartOffset, std::ios::beg);
+			for (unsigned int i = 0; i < m_nodeCount; i++)
+			{
+				EMASkelettonNodeTemp skelettonNodeTemp{};
+				file.read(reinterpret_cast<char*>(&skelettonNodeTemp), sizeof(EMASkelettonNodeTemp));
+
+				EMASkelettonNode skelettonNode{};
+				skelettonNode.number = i;
+				skelettonNode.parent = skelettonNodeTemp.parent;
+				skelettonNode.child1 = skelettonNodeTemp.child1;
+				skelettonNode.sibling = skelettonNodeTemp.child2;
+				skelettonNode.flags = skelettonNodeTemp.flags;
+				skelettonNode.unknownScale = skelettonNodeTemp.unknown4;
+				memcpy(skelettonNode.matrix, skelettonNodeTemp.matrix, 16 * sizeof(float));
+
+				decomposeMatrix(skelettonNode.rotation, skelettonNode.scale, skelettonNode.translation, skelettonNode.matrix, skelettonNode.rotationQuaternion);
+
+				m_skelettonNodes.insert(SkelettonNodePerNumberMap::value_type(i, skelettonNode));
+			}
+
+			//Matrix
+			if (skelettonHeader.matrixOffset != 0)
+			{
+				file.seekg(skeletonAdress + skelettonHeader.matrixOffset, std::ios::beg);
+				file.read(reinterpret_cast<char*>(m_matrix), sizeof(float) * 16);
+				// [m00 m01 m02]
+				// [m10 m11 m12]
+				// [m20 m21 m22]
+				// heading = Math.atan2(-m.m20,m.m00);
+				// bank = Math.atan2(-m.m12,m.m11);
+				// attitude = Math.asin(m.m10);
+				float translation[] = { -m_matrix[12], m_matrix[14], m_matrix[13] };
+				auto rx = atan2(-m_matrix[2], m_matrix[0]);
+				auto ry = atan2(-m_matrix[9], m_matrix[5]);
+				auto rz = asin(m_matrix[1]);
+			}
+			else
+			{
+				memset(m_matrix, 0, 16 * sizeof(float));
+				m_matrix[0] = m_matrix[5] = m_matrix[10] = m_matrix[15] = 1.f;
+			}
+
+			// read ik information
+			if (0 < skelettonHeader.ikDataCount &&
+				0 != skelettonHeader.ikDataOffset)
+			{
+				file.seekg(skeletonAdress + skelettonHeader.ikDataOffset, std::ios::beg);
+
+				m_ikData.resize(skelettonHeader.ikDataCount);
+
+				for (unsigned int i = 0; i < skelettonHeader.ikDataCount; i++)
+				{
+					file.read(reinterpret_cast<char*>(&m_ikData[i].method), sizeof(unsigned short));
+					file.read(reinterpret_cast<char*>(&m_ikData[i].dataSize), sizeof(unsigned short));
+					memset(m_ikData[i].data, 0, 0x20);
+					file.read(reinterpret_cast<char*>(m_ikData[i].data), sizeof(unsigned char) * min((m_ikData[i].dataSize - 4), 0x20));
+				}
+			}
 		}
 		else
 		{
-			memset(m_matrix, 0, 16 * sizeof (float));
-			m_matrix[0] = m_matrix[5] = m_matrix[10] = m_matrix[15] = 1.f;
-		}
-
-		// read ik information
-		if (0 < skelettonHeader.ikDataCount &&
-			0 != skelettonHeader.ikDataOffset)
-		{
-			file.seekg(skeletonAdress + skelettonHeader.ikDataOffset, std::ios::beg);
-
-			m_ikData.resize(skelettonHeader.ikDataCount);
-
-			for (unsigned int i = 0; i<skelettonHeader.ikDataCount; i++)
-			{
-				file.read(reinterpret_cast<char*>(&m_ikData[i].method), sizeof (unsigned short));
-				file.read(reinterpret_cast<char*>(&m_ikData[i].dataSize), sizeof (unsigned short));
-				memset(m_ikData[i].data, 0, 0x20);
-				file.read(reinterpret_cast<char*>(m_ikData[i].data), sizeof (unsigned char)*min((m_ikData[i].dataSize - 4), 0x20));
-			}
+			m_skelettonNodeNames.insert(std::map<unsigned short, std::string>::value_type(0, "camera"));
+			EMASkelettonNode skelettonNode{};
+			m_skelettonNodes.insert(SkelettonNodePerNumberMap::value_type(0, skelettonNode));
 		}
 
 		// read animations
@@ -751,7 +760,15 @@ public:
 			D3DXMATRIX MatrixParentInverse;
 			D3DXMatrixInverse(&MatrixParentInverse, 0, &MatrixParent);
 
-			auto LocalMatrix = MatrixWorld * MatrixParentInverse;
+			std::map<unsigned short, std::string>::const_iterator itRefSkeletonNodeName = emaData.m_skelettonNodeNames.find(node.number);
+			names[id] = itRefSkeletonNodeName->second;
+
+			D3DXMATRIX LocalMatrix;
+
+			if (names[id] != "camera")
+				LocalMatrix = MatrixWorld * MatrixParentInverse;
+			else
+				LocalMatrix = MatrixWorld;
 
 			D3DXVECTOR3 translation, rotation, scale;
 			D3DXQUATERNION rotation_quaternion;
@@ -763,9 +780,6 @@ public:
 			structure[id][3] = rotation.x * float(M_PI / 180.);
 			structure[id][4] = rotation.y * float(M_PI / 180.);
 			structure[id][5] = rotation.z * float(M_PI / 180.);
-
-			std::map<unsigned short, std::string>::const_iterator itRefSkeletonNodeName = emaData.m_skelettonNodeNames.find(node.number);
-			names[id] = itRefSkeletonNodeName->second;
 		};
 	}
 

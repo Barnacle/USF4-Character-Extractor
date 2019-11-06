@@ -680,7 +680,7 @@ private: System::Void openToolStripMenuItem_Click(System::Object^  sender, Syste
 					for(auto index = 0; index < files->Length; index++)
 					{
 						auto file = files[index];
-						if(file->EndsWith(".ema") && !file->EndsWith(".cam.ema"))
+						if(file->EndsWith(".ema"))
 						{
 							OpenAnimFile(path, getFileName(file, true));
 						}
@@ -1203,8 +1203,9 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 									 float structure[500][6];
 									 std::string names[500];
 
-									 sw->WriteLine("time 0");
+									 // Reference frame.
 									 m_D3DWrap->WrapUpdate(structure, names, "ref", 0);
+									 sw->WriteLine("time 0");
 									 for (auto i = 0; i < skeleton_data->NodesCount; i++)
 									 {
 										 if (i == 0)
@@ -1216,22 +1217,21 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 										 }
 									 }
 
+									 // Actual animation.
 									 for (ushort time = 0; time < duration; time++)
 									 {
 										 sw->WriteLine("time " + (time + 1));
 										 m_D3DWrap->WrapUpdate(structure, names, animation_name, time);
 										 for (auto i = 0; i < skeleton_data->NodesCount; i++)
 										 {
-											 if (i == 0 && time == 0)
-												 sw->WriteLine("0 0 0 0 0 0 0"); //1.570796 3.141592
-											 else if (i != 0)
-											 {
-												 auto name3(names[i]);
-												 auto nameclr = gcnew String(name3.c_str());
+											 auto nameclr = gcnew String(names[i].c_str());
 
+											 if (!nameclr->Equals("camera") && i == 0 && time == 0)
+												 sw->WriteLine("0 0 0 0 0 0 0"); //1.570796 3.141592
+											 else if (nameclr->Equals("camera") || i != 0)
+											 {
 												 if (nameclr == "RLegRoot" || nameclr == "LLegRoot" || nameclr == "LArmRoot" || nameclr == "RArmRoot")
-												 {
-												 }
+												 { }
 												 else
 												 {
 													 sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
