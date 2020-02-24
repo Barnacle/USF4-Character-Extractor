@@ -3,10 +3,10 @@
 #include "AboutBox.h"
 #include "Wrapper.h"
 #include "Reader.h"
-#include <experimental/filesystem>
+#include <filesystem>
 #include <msclr/marshal_cppstd.h>
-namespace file_sys = std::experimental::filesystem;
 
+namespace file_sys = std::filesystem;
 
 namespace SSF4ce {
 
@@ -57,6 +57,8 @@ namespace SSF4ce {
 
 	public:
 		Wrapper^ m_D3DWrap;
+	private: System::Windows::Forms::ToolStripMenuItem^ refFrametoolStripMenuItem;
+	public:
 		OpenFileDialog^ openFileDialog1 = gcnew OpenFileDialog();
 
 		MainForm(void)
@@ -138,6 +140,7 @@ namespace SSF4ce {
 			this->TopSplitContainer = (gcnew System::Windows::Forms::SplitContainer());
 			this->BottomSplitContainer = (gcnew System::Windows::Forms::SplitContainer());
 			this->trackBar1 = (gcnew System::Windows::Forms::TrackBar());
+			this->refFrametoolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->statusStrip1->SuspendLayout();
 			this->toolStrip1->SuspendLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->BaseSplitContainer))->BeginInit();
@@ -213,10 +216,10 @@ namespace SSF4ce {
 			// toolStripDropDownButton3
 			// 
 			this->toolStripDropDownButton3->DisplayStyle = System::Windows::Forms::ToolStripItemDisplayStyle::Text;
-			this->toolStripDropDownButton3->DropDownItems->AddRange(gcnew cli::array< System::Windows::Forms::ToolStripItem^  >(6) {
+			this->toolStripDropDownButton3->DropDownItems->AddRange(gcnew cli::array< System::Windows::Forms::ToolStripItem^  >(7) {
 				this->steamToolStripMenuItem,
 					this->originStoreToolStripMenuItem, this->MergeSubmodelsToolStripMenuItem, this->replaceSkelToolStripMenuItem, this->toolStripTextBox1,
-					this->starPoseFixToolStripMenuItem
+					this->starPoseFixToolStripMenuItem, this->refFrametoolStripMenuItem
 			});
 			this->toolStripDropDownButton3->Name = L"toolStripDropDownButton3";
 			this->toolStripDropDownButton3->ShowDropDownArrow = false;
@@ -228,7 +231,7 @@ namespace SSF4ce {
 			this->steamToolStripMenuItem->Checked = true;
 			this->steamToolStripMenuItem->CheckState = System::Windows::Forms::CheckState::Checked;
 			this->steamToolStripMenuItem->Name = L"steamToolStripMenuItem";
-			this->steamToolStripMenuItem->Size = System::Drawing::Size(173, 22);
+			this->steamToolStripMenuItem->Size = System::Drawing::Size(180, 22);
 			this->steamToolStripMenuItem->Text = L"Steam folder";
 			this->steamToolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::steamToolStripMenuItem_Click);
 			// 
@@ -237,7 +240,7 @@ namespace SSF4ce {
 			this->originStoreToolStripMenuItem->Checked = true;
 			this->originStoreToolStripMenuItem->CheckState = System::Windows::Forms::CheckState::Checked;
 			this->originStoreToolStripMenuItem->Name = L"originStoreToolStripMenuItem";
-			this->originStoreToolStripMenuItem->Size = System::Drawing::Size(173, 22);
+			this->originStoreToolStripMenuItem->Size = System::Drawing::Size(180, 22);
 			this->originStoreToolStripMenuItem->Text = L"Origin coord. store";
 			this->originStoreToolStripMenuItem->Visible = false;
 			this->originStoreToolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::originStoreToolStripMenuItem_Click);
@@ -245,7 +248,7 @@ namespace SSF4ce {
 			// MergeSubmodelsToolStripMenuItem
 			// 
 			this->MergeSubmodelsToolStripMenuItem->Name = L"MergeSubmodelsToolStripMenuItem";
-			this->MergeSubmodelsToolStripMenuItem->Size = System::Drawing::Size(173, 22);
+			this->MergeSubmodelsToolStripMenuItem->Size = System::Drawing::Size(180, 22);
 			this->MergeSubmodelsToolStripMenuItem->Text = L"Merge submodels";
 			this->MergeSubmodelsToolStripMenuItem->ToolTipText = L"By texture id";
 			this->MergeSubmodelsToolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::MergeSubmodelsToolStripMenuItem_Click);
@@ -253,7 +256,7 @@ namespace SSF4ce {
 			// replaceSkelToolStripMenuItem
 			// 
 			this->replaceSkelToolStripMenuItem->Name = L"replaceSkelToolStripMenuItem";
-			this->replaceSkelToolStripMenuItem->Size = System::Drawing::Size(173, 22);
+			this->replaceSkelToolStripMenuItem->Size = System::Drawing::Size(180, 22);
 			this->replaceSkelToolStripMenuItem->Text = L"Replace skeleton";
 			this->replaceSkelToolStripMenuItem->ToolTipText = L"Quick fix for a T-Pose chars, not for a Star-Pose ones";
 			this->replaceSkelToolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::replaceSkelToolStripMenuItem_Click);
@@ -269,7 +272,7 @@ namespace SSF4ce {
 			// starPoseFixToolStripMenuItem
 			// 
 			this->starPoseFixToolStripMenuItem->Name = L"starPoseFixToolStripMenuItem";
-			this->starPoseFixToolStripMenuItem->Size = System::Drawing::Size(173, 22);
+			this->starPoseFixToolStripMenuItem->Size = System::Drawing::Size(180, 22);
 			this->starPoseFixToolStripMenuItem->Text = L"Star-Pose Fix";
 			this->starPoseFixToolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::starPoseFixToolStripMenuItem_Click);
 			// 
@@ -394,6 +397,14 @@ namespace SSF4ce {
 			this->trackBar1->Size = System::Drawing::Size(593, 45);
 			this->trackBar1->TabIndex = 1;
 			this->trackBar1->Visible = false;
+			// 
+			// refFrametoolStripMenuItem
+			// 
+			this->refFrametoolStripMenuItem->Name = L"refFrametoolStripMenuItem";
+			this->refFrametoolStripMenuItem->Size = System::Drawing::Size(180, 22);
+			this->refFrametoolStripMenuItem->Text = L"Reference Frame";
+			this->refFrametoolStripMenuItem->ToolTipText = L"Add Ref. pose frame to animation as \"time 0\"";
+			this->refFrametoolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::refFrametoolStripMenuItem_Click);
 			// 
 			// MainForm
 			// 
@@ -1204,23 +1215,26 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 									 std::string names[500];
 
 									 // Reference frame.
-									 m_D3DWrap->WrapUpdate(structure, names, "ref", 0);
-									 sw->WriteLine("time 0");
-									 for (auto i = 0; i < skeleton_data->NodesCount; i++)
+									 if (refFrametoolStripMenuItem->Checked == true)
 									 {
-										 if (i == 0)
-											 sw->WriteLine("0 0 0 0 0 0 0"); //1.570796 3.141592
-										 else if (i != 0)
+										 m_D3DWrap->WrapUpdate(structure, names, "ref", 0);
+										 sw->WriteLine("time 0");
+										 for (auto i = 0; i < skeleton_data->NodesCount; i++)
 										 {
-											 sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
-											 sw->WriteLine(structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us));
+											 if (i == 0)
+												 sw->WriteLine("0 0 0 0 0 0 0"); //1.570796 3.141592
+											 else if (i != 0)
+											 {
+												 sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
+												 sw->WriteLine(structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us));
+											 }
 										 }
 									 }
 
 									 // Actual animation.
 									 for (ushort time = 0; time < duration; time++)
 									 {
-										 sw->WriteLine("time " + (time + 1));
+										 sw->WriteLine("time " + (time + refFrametoolStripMenuItem->Checked == true ? 1 : 0));
 										 m_D3DWrap->WrapUpdate(structure, names, animation_name, time);
 										 for (auto i = 0; i < skeleton_data->NodesCount; i++)
 										 {
@@ -1563,6 +1577,12 @@ private: System::Void starPoseFixToolStripMenuItem_Click(System::Object^  sender
 				 starPoseFixToolStripMenuItem->Checked = false;
 			 else
 				 starPoseFixToolStripMenuItem->Checked = true;
+}
+private: System::Void refFrametoolStripMenuItem_Click(System::Object^ sender, System::EventArgs^ e) {
+			if (refFrametoolStripMenuItem->Checked)
+				refFrametoolStripMenuItem->Checked = false;
+			else
+				refFrametoolStripMenuItem->Checked = true;
 }
 private: System::Void TopSplitContainer_SplitterMoved(System::Object^  sender, System::Windows::Forms::SplitterEventArgs^  e) {
 	m_D3DWrap->WrapResize(TopSplitContainer->Panel2->Width, TopSplitContainer->Panel2->Height);
