@@ -1274,23 +1274,23 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 												 sw->WriteLine("0 0 0 0 0 0 0"); //1.570796 3.141592
 											 else if (nameclr->Equals("camera") || i != 0)
 											 {
-												 if (time == 0)
-												 {
-													 if (nameclr == "RLegRoot")
-														 sw->Write(RLegRoot);
-													 else if (nameclr == "LLegRoot")
-														 sw->Write(LLegRoot);
-													 else if (nameclr == "LArmRoot")
-														 sw->Write(LArmRoot);
-													 else if (nameclr == "RArmRoot")
-														 sw->Write(RArmRoot);
-												 }
-												 else if (time != 0 && (nameclr == "RLegRoot" || nameclr == "LLegRoot" || nameclr == "LArmRoot" || nameclr == "RArmRoot"))
+												 if (time != 0 && (nameclr == "RLegRoot" || nameclr == "LLegRoot" || nameclr == "LArmRoot" || nameclr == "RArmRoot"))
 												 { /*Empty*/}
 												 else
 												 {
-													 sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
-													 sw->WriteLine(structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us));
+													 if (nameclr == "RLegRoot")
+														 sw->WriteLine(RLegRoot);
+													 else if (nameclr == "LLegRoot")
+														 sw->WriteLine(LLegRoot);
+													 else if (nameclr == "LArmRoot")
+														 sw->WriteLine(LArmRoot);
+													 else if (nameclr == "RArmRoot")
+														 sw->WriteLine(RArmRoot);
+													 else
+													 {
+														 sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
+														 sw->WriteLine(structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us));
+													 }
 												 }
 											 }
 										 }
