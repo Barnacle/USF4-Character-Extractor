@@ -1214,19 +1214,45 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 									 float structure[500][6];
 									 std::string names[500];
 
+									 auto RLegRoot = gcnew String("");
+									 auto LLegRoot = gcnew String("");
+									 auto LArmRoot = gcnew String("");
+									 auto RArmRoot = gcnew String("");
+
 									 // Reference frame.
+									 m_D3DWrap->WrapUpdate(structure, names, "ref", 0);
+
 									 if (refFrametoolStripMenuItem->Checked == true)
+										sw->WriteLine("time 0");
+
+									 for (auto i = 0; i < skeleton_data->NodesCount; i++)
 									 {
-										 m_D3DWrap->WrapUpdate(structure, names, "ref", 0);
-										 sw->WriteLine("time 0");
-										 for (auto i = 0; i < skeleton_data->NodesCount; i++)
+										 auto nameclr = gcnew String(names[i].c_str());
+
+										 if (i == 0)
 										 {
-											 if (i == 0)
+											 if (refFrametoolStripMenuItem->Checked == true)
 												 sw->WriteLine("0 0 0 0 0 0 0"); //1.570796 3.141592
-											 else if (i != 0)
+										 }
+										 else if (i != 0)
+										 {
+											 if (refFrametoolStripMenuItem->Checked == true)
 											 {
 												 sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
 												 sw->WriteLine(structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us));
+											 }
+											 else
+											 {
+												 auto temp = i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ";
+												 temp += structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us);
+												 if (nameclr == "RLegRoot")
+													 RLegRoot = temp;
+												 else if (nameclr == "LLegRoot")
+													 LLegRoot = temp;
+												 else if (nameclr == "LArmRoot")
+													 LArmRoot = temp;
+												 else if (nameclr == "RArmRoot")
+													 RArmRoot = temp;
 											 }
 										 }
 									 }
@@ -1234,7 +1260,11 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 									 // Actual animation.
 									 for (ushort time = 0; time < duration; time++)
 									 {
-										 sw->WriteLine("time " + (time + refFrametoolStripMenuItem->Checked == true ? 1 : 0));
+										 auto ref_frame = 0;
+										 if (refFrametoolStripMenuItem->Checked == true)
+											 ref_frame = 1;
+
+										 sw->WriteLine("time " + (time + ref_frame));
 										 m_D3DWrap->WrapUpdate(structure, names, animation_name, time);
 										 for (auto i = 0; i < skeleton_data->NodesCount; i++)
 										 {
@@ -1244,8 +1274,19 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 												 sw->WriteLine("0 0 0 0 0 0 0"); //1.570796 3.141592
 											 else if (nameclr->Equals("camera") || i != 0)
 											 {
-												 if (nameclr == "RLegRoot" || nameclr == "LLegRoot" || nameclr == "LArmRoot" || nameclr == "RArmRoot")
-												 { }
+												 if (time == 0)
+												 {
+													 if (nameclr == "RLegRoot")
+														 sw->Write(RLegRoot);
+													 else if (nameclr == "LLegRoot")
+														 sw->Write(LLegRoot);
+													 else if (nameclr == "LArmRoot")
+														 sw->Write(LArmRoot);
+													 else if (nameclr == "RArmRoot")
+														 sw->Write(RArmRoot);
+												 }
+												 else if (time != 0 && (nameclr == "RLegRoot" || nameclr == "LLegRoot" || nameclr == "LArmRoot" || nameclr == "RArmRoot"))
+												 { /*Empty*/}
 												 else
 												 {
 													 sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
