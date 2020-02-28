@@ -888,9 +888,9 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 
 									 if (starPoseFixToolStripMenuItem->Checked == true)
 									 {
-										 if (nameclr == "RLegRoot")
+										 if (nameclr == "RLegRoot" || nameclr == "RLegDir")
 											 ry = -float(0.610842);
-										 else if (nameclr == "LLegRoot")
+										 else if (nameclr == "LLegRoot" || nameclr == "LLegDir")
 											 ry = float(0.610842);
 										 else 
 											 ry = structure[nodes][5];
@@ -1293,13 +1293,13 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 												 { /*Empty*/}
 												 else
 												 {
-													 if (nameclr == "RLegRoot")
+													 if (nameclr == "RLegRoot" && refFrametoolStripMenuItem->Checked != true)
 														 sw->WriteLine(RLegRoot);
-													 else if (nameclr == "LLegRoot")
+													 else if (nameclr == "LLegRoot" && refFrametoolStripMenuItem->Checked != true)
 														 sw->WriteLine(LLegRoot);
-													 else if (nameclr == "LArmRoot")
+													 else if (nameclr == "LArmRoot" && refFrametoolStripMenuItem->Checked != true)
 														 sw->WriteLine(LArmRoot);
-													 else if (nameclr == "RArmRoot")
+													 else if (nameclr == "RArmRoot" && refFrametoolStripMenuItem->Checked != true)
 														 sw->WriteLine(RArmRoot);
 													 else
 													 {
