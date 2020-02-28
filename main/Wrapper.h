@@ -23,8 +23,8 @@ public:
 		ushort** IndiceArray, unsigned char* VertexArray);
 	HRESULT WrapLoadDDS(ushort DDScount, unsigned long* DDSsize, unsigned char** DDScontent);
 
-	HRESULT WrapSetup(System::String^ emaFileName, unsigned long emaBlockOffset);
-	HRESULT WrapUpdate(float(&structure)[500][6], std::string(&names)[500], System::String^ AnimationName, int frame);
+	HRESULT WrapSetupEMA(System::String^ emaFileName, unsigned long emaBlockOffset);
+	HRESULT WrapUpdateEMA(float(&structure)[500][6], std::string(&names)[500], System::String^ AnimationName, int frame);
 
 	std::string managedStrToNative(System::String^ sysstr)
 	{
@@ -101,13 +101,13 @@ inline HRESULT Wrapper::WrapLoadDDS(ushort DDScount, unsigned long* DDSsize, uns
 	return m_pRenderer->LoadDDS(DDScount, DDSsize, DDScontent);
 }
 
-inline HRESULT Wrapper::WrapSetup(System::String^ emaFileName, unsigned long emaBlockOffset)
+inline HRESULT Wrapper::WrapSetupEMA(System::String^ emaFileName, unsigned long emaBlockOffset)
 {
 	const auto emaFileName1 = managedStrToNative(emaFileName);
 	return m_pRenderer->Setup(emaFileName1, emaBlockOffset);
 }
 
-inline HRESULT Wrapper::WrapUpdate(float(&structure)[500][6], std::string(&names)[500], System::String^ AnimationName, int frame)
+inline HRESULT Wrapper::WrapUpdateEMA(float(&structure)[500][6], std::string(&names)[500], System::String^ AnimationName, int frame)
 {
 	const auto AnimationName1 = managedStrToNative(AnimationName);
 	return m_pRenderer->Update(structure, names, AnimationName1, frame);

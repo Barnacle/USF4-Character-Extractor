@@ -48,17 +48,16 @@ namespace SSF4ce {
 	private: System::Windows::Forms::ToolStripTextBox^  toolStripTextBox1;
 	private: System::Windows::Forms::ToolStripMenuItem^  replaceSkelToolStripMenuItem;
 	private: System::Windows::Forms::ToolStripMenuItem^  starPoseFixToolStripMenuItem;
+	private: System::Windows::Forms::ToolStripMenuItem^ refFrametoolStripMenuItem;
+	private: System::Windows::Forms::ToolStripMenuItem^ tempAnimFixtoolStripMenuItem;
 	private: System::Windows::Forms::SplitContainer^  BaseSplitContainer;
 	private: System::Windows::Forms::SplitContainer^  TopSplitContainer;
 	private: System::Windows::Forms::SplitContainer^  BottomSplitContainer;
-
 
 	private: System::Windows::Forms::TrackBar^  trackBar1;
 
 	public:
 		Wrapper^ m_D3DWrap;
-	private: System::Windows::Forms::ToolStripMenuItem^ refFrametoolStripMenuItem;
-	public:
 		OpenFileDialog^ openFileDialog1 = gcnew OpenFileDialog();
 
 		MainForm(void)
@@ -131,6 +130,7 @@ namespace SSF4ce {
 			this->replaceSkelToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->toolStripTextBox1 = (gcnew System::Windows::Forms::ToolStripTextBox());
 			this->starPoseFixToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
+			this->refFrametoolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->toolStripDropDownButton2 = (gcnew System::Windows::Forms::ToolStripDropDownButton());
 			this->aboutToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->treeView1 = (gcnew System::Windows::Forms::TreeView());
@@ -140,7 +140,7 @@ namespace SSF4ce {
 			this->TopSplitContainer = (gcnew System::Windows::Forms::SplitContainer());
 			this->BottomSplitContainer = (gcnew System::Windows::Forms::SplitContainer());
 			this->trackBar1 = (gcnew System::Windows::Forms::TrackBar());
-			this->refFrametoolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
+			this->tempAnimFixtoolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->statusStrip1->SuspendLayout();
 			this->toolStrip1->SuspendLayout();
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->BaseSplitContainer))->BeginInit();
@@ -216,10 +216,10 @@ namespace SSF4ce {
 			// toolStripDropDownButton3
 			// 
 			this->toolStripDropDownButton3->DisplayStyle = System::Windows::Forms::ToolStripItemDisplayStyle::Text;
-			this->toolStripDropDownButton3->DropDownItems->AddRange(gcnew cli::array< System::Windows::Forms::ToolStripItem^  >(7) {
+			this->toolStripDropDownButton3->DropDownItems->AddRange(gcnew cli::array< System::Windows::Forms::ToolStripItem^  >(8) {
 				this->steamToolStripMenuItem,
 					this->originStoreToolStripMenuItem, this->MergeSubmodelsToolStripMenuItem, this->replaceSkelToolStripMenuItem, this->toolStripTextBox1,
-					this->starPoseFixToolStripMenuItem, this->refFrametoolStripMenuItem
+					this->starPoseFixToolStripMenuItem, this->refFrametoolStripMenuItem, this->tempAnimFixtoolStripMenuItem
 			});
 			this->toolStripDropDownButton3->Name = L"toolStripDropDownButton3";
 			this->toolStripDropDownButton3->ShowDropDownArrow = false;
@@ -275,6 +275,14 @@ namespace SSF4ce {
 			this->starPoseFixToolStripMenuItem->Size = System::Drawing::Size(180, 22);
 			this->starPoseFixToolStripMenuItem->Text = L"Star-Pose Fix";
 			this->starPoseFixToolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::starPoseFixToolStripMenuItem_Click);
+			// 
+			// refFrametoolStripMenuItem
+			// 
+			this->refFrametoolStripMenuItem->Name = L"refFrametoolStripMenuItem";
+			this->refFrametoolStripMenuItem->Size = System::Drawing::Size(180, 22);
+			this->refFrametoolStripMenuItem->Text = L"Reference Frame";
+			this->refFrametoolStripMenuItem->ToolTipText = L"Add Ref. pose frame to animation as \"time 0\"";
+			this->refFrametoolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::refFrametoolStripMenuItem_Click);
 			// 
 			// toolStripDropDownButton2
 			// 
@@ -398,13 +406,15 @@ namespace SSF4ce {
 			this->trackBar1->TabIndex = 1;
 			this->trackBar1->Visible = false;
 			// 
-			// refFrametoolStripMenuItem
+			// tempAnimFixtoolStripMenuItem
 			// 
-			this->refFrametoolStripMenuItem->Name = L"refFrametoolStripMenuItem";
-			this->refFrametoolStripMenuItem->Size = System::Drawing::Size(180, 22);
-			this->refFrametoolStripMenuItem->Text = L"Reference Frame";
-			this->refFrametoolStripMenuItem->ToolTipText = L"Add Ref. pose frame to animation as \"time 0\"";
-			this->refFrametoolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::refFrametoolStripMenuItem_Click);
+			this->tempAnimFixtoolStripMenuItem->Checked = true;
+			this->tempAnimFixtoolStripMenuItem->CheckState = System::Windows::Forms::CheckState::Checked;
+			this->tempAnimFixtoolStripMenuItem->Name = L"tempAnimFixtoolStripMenuItem";
+			this->tempAnimFixtoolStripMenuItem->Size = System::Drawing::Size(180, 22);
+			this->tempAnimFixtoolStripMenuItem->Text = L"Temp Anim Fix";
+			this->tempAnimFixtoolStripMenuItem->ToolTipText = L"Slow temporal fix";
+			this->tempAnimFixtoolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::tempAnimFixtoolStripMenuItem_Click);
 			// 
 			// MainForm
 			// 
@@ -825,8 +835,8 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 						 auto name2 = name->TrimEnd(trim_chars2);
 
 						 auto anim_name = gcnew String(path + "\\" + name2 + ".obj.ema");
-						 m_D3DWrap->WrapSetup(anim_name, 0);
-						 m_D3DWrap->WrapUpdate(structure, names, "NONE", 0);
+						 m_D3DWrap->WrapSetupEMA(anim_name, 0);
+						 m_D3DWrap->WrapUpdateEMA(structure, names, "NONE", 0);
 					 }
 
 					 using Runtime::InteropServices::GCHandle;
@@ -1157,19 +1167,24 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 					 while (animFiles_enum->MoveNext())
 					 {
 						 auto fileNode = safe_cast<TreeNode^>(animFiles_enum->Current);
-						 if (fileNode->Checked)
+						 if (fileNode->Checked) // *.*.ema file
 						 {
 							 ushort animation_id;
 							 auto my_enum = treeView1->Nodes[2]->Nodes[fileNode->Index]->Nodes->GetEnumerator();
 
 							 auto anim_name = gcnew String(path + "\\" + fileNode->Text);
-							 m_D3DWrap->WrapSetup(anim_name, 0);
+
+							 if(tempAnimFixtoolStripMenuItem->Checked != true)
+								m_D3DWrap->WrapSetupEMA(anim_name, 0);
 
 							 while (my_enum->MoveNext())
 							 {
 								 auto node = safe_cast<TreeNode^>(my_enum->Current);
-								 if (node->Checked)
+								 if (node->Checked) // Animation in *.*.ema file
 								 {
+									 if (tempAnimFixtoolStripMenuItem->Checked == true)
+										 m_D3DWrap->WrapSetupEMA(anim_name, 0);
+
 									 animation_id = node->Index;
 
 									 auto output_path = Path::GetDirectoryName(saveFileDialog1->FileName);
@@ -1220,7 +1235,7 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 									 auto RArmRoot = gcnew String("");
 
 									 // Reference frame.
-									 m_D3DWrap->WrapUpdate(structure, names, "ref", 0);
+									 m_D3DWrap->WrapUpdateEMA(structure, names, "ref", 0);
 
 									 if (refFrametoolStripMenuItem->Checked == true)
 										sw->WriteLine("time 0");
@@ -1265,7 +1280,7 @@ private: System::Void button1_Click(System::Object^  sender, System::EventArgs^ 
 											 ref_frame = 1;
 
 										 sw->WriteLine("time " + (time + ref_frame));
-										 m_D3DWrap->WrapUpdate(structure, names, animation_name, time);
+										 m_D3DWrap->WrapUpdateEMA(structure, names, animation_name, time);
 										 for (auto i = 0; i < skeleton_data->NodesCount; i++)
 										 {
 											 auto nameclr = gcnew String(names[i].c_str());
@@ -1624,6 +1639,12 @@ private: System::Void refFrametoolStripMenuItem_Click(System::Object^ sender, Sy
 				refFrametoolStripMenuItem->Checked = false;
 			else
 				refFrametoolStripMenuItem->Checked = true;
+}
+private: System::Void tempAnimFixtoolStripMenuItem_Click(System::Object^ sender, System::EventArgs^ e) {
+			if (tempAnimFixtoolStripMenuItem->Checked)
+				tempAnimFixtoolStripMenuItem->Checked = false;
+			else
+				tempAnimFixtoolStripMenuItem->Checked = true;
 }
 private: System::Void TopSplitContainer_SplitterMoved(System::Object^  sender, System::Windows::Forms::SplitterEventArgs^  e) {
 	m_D3DWrap->WrapResize(TopSplitContainer->Panel2->Width, TopSplitContainer->Panel2->Height);
