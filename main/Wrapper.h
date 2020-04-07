@@ -4,111 +4,108 @@
 
 class CD3DRender;
 
-public ref class Wrapper
+public ref class wrapper sealed
 {
 public:
-	Wrapper();
-	~Wrapper();
+	wrapper();
+	~wrapper();
 
-	HRESULT WrapInit(int hWnd, int width, int height);
-	HRESULT WrapClose();
-	HRESULT WrapRender();
-	HRESULT	WrapResize(int width, int height);
-	HRESULT	WrapOnMouseButtonUp();
-	HRESULT	WrapOnMouseMove(short x, short y, bool RMousing);
-	HRESULT	WrapOnMouseButtonDown(short x, short y);
-	HRESULT WrapCreateBuffers(ushort EMGcount);
-	HRESULT	WrapLoadEMG(ushort CurrentEMG, ushort EMGsubmodels, unsigned char* DDSid, ushort* IndexCount,
-		ushort VertexCount, ushort VertexSize,
-		ushort** IndiceArray, unsigned char* VertexArray);
-	HRESULT WrapLoadDDS(ushort DDScount, unsigned long* DDSsize, unsigned char** DDScontent);
+	HRESULT init(int hwnd, int width, int height);
+	HRESULT close();
+	HRESULT render();
+	HRESULT	resize(int width, int height);
+	HRESULT	on_mouse_button_up();
+	HRESULT	on_mouse_move(short x, short y, bool r_mousing);
+	HRESULT	on_mouse_button_down(short x, short y);
+	HRESULT create_buffers(ushort emg_count);
+	HRESULT	load_emg(ushort current_emg, ushort emg_submodels, unsigned char* dds_id, ushort* index_amount,
+					ushort vertex_amount, ushort vertex_size, ushort** indices_array, unsigned char* vertex_array);
+	HRESULT load_dds(ushort dds_count, unsigned long* dds_size, unsigned char** dds_content);
+	HRESULT setup_ema(System::String^ ema_file_name, unsigned long ema_block_offset);
+	HRESULT update_ema(float(&structure)[500][6], std::string(&names)[500], System::String^ animation_name, int frame);
 
-	HRESULT WrapSetupEMA(System::String^ emaFileName, unsigned long emaBlockOffset);
-	HRESULT WrapUpdateEMA(float(&structure)[500][6], std::string(&names)[500], System::String^ AnimationName, int frame);
-
-	std::string managedStrToNative(System::String^ sysstr)
+	static std::string managed_string_to_native(System::String^ str)
 	{
 		using System::IntPtr;
 		using System::Runtime::InteropServices::Marshal;
 
-		auto ip = Marshal::StringToHGlobalAnsi(sysstr);
-		std::string outString = static_cast<const char*>(ip.ToPointer());
+		auto ip = Marshal::StringToHGlobalAnsi(str);
+		std::string out_string = static_cast<const char*>(ip.ToPointer());
 		Marshal::FreeHGlobal(ip);
-		return outString;
+		return out_string;
 	}
 
 protected:
 	CD3DRender* m_pRenderer;
 };
 
-inline Wrapper::Wrapper()
+inline wrapper::wrapper()
 {
 	m_pRenderer = new CD3DRender;
 }
 
-inline Wrapper::~Wrapper()
+inline wrapper::~wrapper()
 {
 	delete m_pRenderer;
 }
 
-inline HRESULT Wrapper::WrapInit(int hWnd, int width, int height)
+inline HRESULT wrapper::init(const int hwnd, const int width, const int height)
 {
-	return m_pRenderer->init(HWND(hWnd), width, height);
+	return m_pRenderer->init(HWND(hwnd), width, height);
 }
 
-inline HRESULT Wrapper::WrapClose()
+inline HRESULT wrapper::close()
 {
-	return m_pRenderer->Shutdown();
+	return m_pRenderer->shutdown();
 }
 
-inline HRESULT Wrapper::WrapRender()
+inline HRESULT wrapper::render()
 {
-	return m_pRenderer->ProcessFrame();
+	return m_pRenderer->process_frame();
 }
 
-inline HRESULT Wrapper::WrapResize(int width, int height)
+inline HRESULT wrapper::resize(const int width, const int height)
 {
-	return m_pRenderer->Resize(width, height);
+	return m_pRenderer->resize(width, height);
 }
 
-inline HRESULT Wrapper::WrapOnMouseButtonUp()
+inline HRESULT wrapper::on_mouse_button_up()
 {
-	return m_pRenderer->OnMouseButtonUp();
+	return m_pRenderer->on_mouse_button_up();
 }
 
-inline HRESULT Wrapper::WrapOnMouseMove(short x, short y, bool RMousing)
+inline HRESULT wrapper::on_mouse_move(const short x, const short y, const bool r_mousing)
 {
-	return m_pRenderer->OnMouseMove(x, y, RMousing);
+	return m_pRenderer->on_mouse_move(x, y, r_mousing);
 }
 
-inline HRESULT Wrapper::WrapOnMouseButtonDown(short x, short y)
+inline HRESULT wrapper::on_mouse_button_down(const short x, const short y)
 {
-	return m_pRenderer->OnMouseButtonDown(x, y);
+	return m_pRenderer->on_mouse_button_down(x, y);
 }
 
-inline HRESULT Wrapper::WrapCreateBuffers(ushort EMGcount)
+inline HRESULT wrapper::create_buffers(const ushort emg_count)
 {
-	return m_pRenderer->CreateBuffers(EMGcount);
+	return m_pRenderer->create_buffers(emg_count);
 }
 
-inline HRESULT Wrapper::WrapLoadEMG(ushort CurrentEMG, ushort EMGsubmodels, unsigned char* DDSid, ushort* IndexCount, ushort VertexSize, ushort VerteSize, ushort** IndiceArray, unsigned char* VertexArray)
+inline HRESULT wrapper::load_emg(const ushort current_emg, const ushort emg_submodels, unsigned char* dds_id, ushort* index_amount, const ushort vertex_amount, const ushort vertex_size, ushort** indices_array, unsigned char* vertex_array)
 {
-	return m_pRenderer->LoadEMG(CurrentEMG, EMGsubmodels, DDSid, IndexCount, VertexSize, VerteSize, IndiceArray, VertexArray);
+	return m_pRenderer->load_emg(current_emg, emg_submodels, dds_id, index_amount, vertex_amount, vertex_size, indices_array, vertex_array);
 }
 
-inline HRESULT Wrapper::WrapLoadDDS(ushort DDScount, unsigned long* DDSsize, unsigned char** DDScontent)
+inline HRESULT wrapper::load_dds(ushort dds_count, unsigned long* dds_size, unsigned char** dds_content)
 {
-	return m_pRenderer->LoadDDS(DDScount, DDSsize, DDScontent);
+	return m_pRenderer->load_dds(dds_count, dds_size, dds_content);
 }
 
-inline HRESULT Wrapper::WrapSetupEMA(System::String^ emaFileName, unsigned long emaBlockOffset)
+inline HRESULT wrapper::setup_ema(System::String^ ema_file_name, const unsigned long ema_block_offset)
 {
-	const auto emaFileName1 = managedStrToNative(emaFileName);
-	return m_pRenderer->Setup(emaFileName1, emaBlockOffset);
+	return m_pRenderer->setup(managed_string_to_native(ema_file_name), ema_block_offset);
 }
 
-inline HRESULT Wrapper::WrapUpdateEMA(float(&structure)[500][6], std::string(&names)[500], System::String^ AnimationName, int frame)
+inline HRESULT wrapper::update_ema(float(&structure)[500][6], std::string(&names)[500], System::String^ animation_name, int frame)
 {
-	const auto AnimationName1 = managedStrToNative(AnimationName);
-	return m_pRenderer->Update(structure, names, AnimationName1, frame);
+	const auto AnimationName1 = managed_string_to_native(animation_name);
+	return m_pRenderer->update(structure, names, AnimationName1, frame);
 }

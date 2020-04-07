@@ -105,6 +105,7 @@
     <ClInclude Include="Reader.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Wrapper.h" />
+    <ClInclude Include="Writer.h" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="AboutBox.resx">

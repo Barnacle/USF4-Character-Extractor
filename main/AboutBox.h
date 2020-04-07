@@ -1,6 +1,7 @@
 #pragma once
 
-namespace SSF4ce {
+// ReSharper disable CppRedundantQualifier
+namespace usf4_ce {
 
 	using namespace System;
 	using namespace System::ComponentModel;
@@ -12,10 +13,10 @@ namespace SSF4ce {
 	/// <summary>
 	/// Summary for AboutBox
 	/// </summary>
-	public ref class AboutBox : public System::Windows::Forms::Form
+	public ref class AboutBox : public Form
 	{
 	public:
-		AboutBox(void)
+		AboutBox()
 		{
 			InitializeComponent();
 			//
@@ -34,11 +35,10 @@ namespace SSF4ce {
 				delete components;
 			}
 		}
-	private: System::Windows::Forms::Button^  button1;
-	private: System::Windows::Forms::Label^  label1;
-	protected:
-
 	private:
+		System::Windows::Forms::Button^  button1;
+		System::Windows::Forms::Label^  label1;
+
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
@@ -49,7 +49,7 @@ namespace SSF4ce {
 		/// Required method for Designer support - do not modify
 		/// the contents of this method with the code editor.
 		/// </summary>
-		void InitializeComponent(void)
+		void InitializeComponent()
 		{
 			this->button1 = (gcnew System::Windows::Forms::Button());
 			this->label1 = (gcnew System::Windows::Forms::Label());
@@ -70,9 +70,9 @@ namespace SSF4ce {
 			this->label1->AutoSize = true;
 			this->label1->Location = System::Drawing::Point(32, 20);
 			this->label1->Name = L"label1";
-			this->label1->Size = System::Drawing::Size(152, 65);
+			this->label1->Size = System::Drawing::Size(146, 65);
 			this->label1->TabIndex = 1;
-			this->label1->Text = L"Barnacle 31.10.2014 \r\n\r\nUSF4 Character Extractor 0.2e\r\n\r\n2014-2020";
+			this->label1->Text = L"Barnacle 31.10.2014 \r\n\r\nUSF4 Character Extractor 0.3\r\n\r\n2014-2020";
 			// 
 			// AboutBox
 			// 
@@ -92,8 +92,10 @@ namespace SSF4ce {
 
 		}
 #pragma endregion
-	private: System::Void button1_Click(System::Object^  sender, System::EventArgs^  e) {
+		System::Void button1_Click(System::Object^  sender, System::EventArgs^  e) {
 				 AboutBox::Close();
 	}
 	};
+	
 }
+// ReSharper restore CppRedundantQualifier

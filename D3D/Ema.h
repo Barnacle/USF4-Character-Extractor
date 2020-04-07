@@ -605,10 +605,10 @@ public:
 
 		if(skeletonOffset != 0)
 		{
-			unsigned long skeletonAdress = emaBlockOffset + skeletonOffset;
+			auto skeletonAdress = emaBlockOffset + skeletonOffset;
 
 			file.seekg(skeletonAdress, std::ios::beg);
-			EMASkelettonHeader skelettonHeader;
+			EMASkelettonHeader skelettonHeader{};
 			file.read(reinterpret_cast<char*>(&skelettonHeader), sizeof(EMASkelettonHeader));
 
 			m_nodeCount = skelettonHeader.nodeCount;
@@ -668,8 +668,7 @@ public:
 			}
 
 			// read ik information
-			if (0 < skelettonHeader.ikDataCount &&
-				0 != skelettonHeader.ikDataOffset)
+			if (0 < skelettonHeader.ikDataCount && 0 != skelettonHeader.ikDataOffset)
 			{
 				file.seekg(skeletonAdress + skelettonHeader.ikDataOffset, std::ios::beg);
 
@@ -712,12 +711,11 @@ class EMARenderer
 	EMAData emaData;
 public:
 	EMARenderer()
-	{
-	}
+	= default;
 
 	bool setup(std::string emaFileName, unsigned long emaBlockOffset)
 	{
-		auto ok = emaData.load(emaFileName, emaBlockOffset);
+		const auto ok = emaData.load(emaFileName, emaBlockOffset);
 		return ok;
 	}
 

@@ -1,9 +1,9 @@
 #include "main.h"
 
-using namespace SSF4ce; //the project name in your header file
+using namespace usf4_ce; //the project name in your header file
 
 [STAThreadAttribute]
-int main(array<System::String ^> ^args)
+int main(array<String ^> ^args)
 {
 	Application::EnableVisualStyles();
 	Application::SetCompatibleTextRenderingDefault(false);

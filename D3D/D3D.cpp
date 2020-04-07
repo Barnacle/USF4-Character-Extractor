@@ -12,16 +12,16 @@ struct vertex
 {
 	D3DXVECTOR3 p;
 	D3DXVECTOR3 n;
-	float u;
-	float v;
+	float u{};
+	float v{};
 
-	enum FVF
+	enum fvf
 	{
-		FVF_Flags = D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_TEX1
+		fvf_flags = D3DFVF_XYZ | D3DFVF_NORMAL | D3DFVF_TEX1
 	};
 };
 
-HRESULT CD3DRender::init(HWND hwnd, int width, int height)
+HRESULT CD3DRender::init(HWND hwnd, const int width, const int height)
 {
 	// Create the D3D object.
 	if (nullptr == (g_D3D = Direct3DCreate9(D3D_SDK_VERSION)))
@@ -47,95 +47,95 @@ HRESULT CD3DRender::init(HWND hwnd, int width, int height)
 	g_d3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
 	g_d3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 	
-	D3DXMATRIX matProj;
-	D3DXMatrixPerspectiveFovLH(&matProj, D3DXToRadian(45.0f),
+	D3DXMATRIX mat_proj;
+	D3DXMatrixPerspectiveFovLH(&mat_proj, D3DXToRadian(45.0f),
 		float(width) / float(height), 0.1f, 100.0f);
-	g_d3dDevice->SetTransform(D3DTS_PROJECTION, &matProj);
+	g_d3dDevice->SetTransform(D3DTS_PROJECTION, &mat_proj);
 
 	return S_OK;
 }
 
-HRESULT CD3DRender::CreateBuffers(ushort EMGcount)
+HRESULT CD3DRender::create_buffers(const ushort emg_amount)
 {
-	g_pIndexBuffer = new LPDIRECT3DINDEXBUFFER9*[EMGcount];
-	g_pVertexBuffer = new LPDIRECT3DVERTEXBUFFER9[EMGcount];
+	g_pIndexBuffer = new LPDIRECT3DINDEXBUFFER9*[emg_amount];
+	g_pVertexBuffer = new LPDIRECT3DVERTEXBUFFER9[emg_amount];
 
-	CD3DRender::EMGcount = EMGcount;
-	EMGsubmodels = new ushort[EMGcount];
+	emg_count = emg_amount;
+	emg_submodels = new ushort[emg_amount];
 
-	IndexCount = new ushort*[EMGcount];
-	VertexCount = new ushort[EMGcount];
-	VertexSize = new ushort[EMGcount];
+	index_count = new ushort*[emg_amount];
+	vertex_count = new ushort[emg_amount];
+	vertex_size = new ushort[emg_amount];
 
-	DDSid = new byte*[EMGcount];
+	dds_id = new byte*[emg_amount];
 
 	return S_OK;
 }
 
 // Filling arrays.
-HRESULT CD3DRender::LoadEMG(ushort CurrentEMG, ushort EMGsubmodels, byte* DDSid, ushort* IndexCount,
-	ushort VertexCount, ushort VertexSize, ushort** IndiceArray, byte* VertexArray)
+HRESULT CD3DRender::load_emg(const ushort current_emg, const ushort emg_submodels, const byte* dds_id, const ushort* index_amount,
+                             const ushort vertex_amount, const ushort vertex_size, ushort** indices_array, byte* vertex_array) const
 {
 	// Filling arrays for using in ProcessFrame().
-	CD3DRender::IndexCount[CurrentEMG] = new ushort[EMGsubmodels];
-	CD3DRender::VertexCount[CurrentEMG] = VertexCount;
-	CD3DRender::VertexSize[CurrentEMG] = VertexSize;
-	CD3DRender::EMGsubmodels[CurrentEMG] = EMGsubmodels;
+	CD3DRender::index_count[current_emg] = new ushort[emg_submodels];
+	CD3DRender::vertex_count[current_emg] = vertex_amount;
+	CD3DRender::vertex_size[current_emg] = vertex_size;
+	CD3DRender::emg_submodels[current_emg] = emg_submodels;
 
-	CD3DRender::DDSid[CurrentEMG] = new byte[EMGsubmodels];
+	CD3DRender::dds_id[current_emg] = new byte[emg_submodels];
 
-	g_pIndexBuffer[CurrentEMG] = new LPDIRECT3DINDEXBUFFER9[EMGsubmodels];
+	g_pIndexBuffer[current_emg] = new LPDIRECT3DINDEXBUFFER9[emg_submodels];
 
-	for (ushort i = 0; i < EMGsubmodels; i++)
+	for (ushort i = 0; i < emg_submodels; i++)
 	{
-		CD3DRender::IndexCount[CurrentEMG][i] = IndexCount[i];
-		CD3DRender::DDSid[CurrentEMG][i] = DDSid[i];
+		CD3DRender::index_count[current_emg][i] = index_amount[i];
+		CD3DRender::dds_id[current_emg][i] = dds_id[i];
 
 		// Create an index buffer to use with our indexed vertex buffer...
-		g_d3dDevice->CreateIndexBuffer(IndexCount[i] * sizeof(WORD),
+		g_d3dDevice->CreateIndexBuffer(index_amount[i] * sizeof(WORD),
 			D3DUSAGE_WRITEONLY,
 			D3DFMT_INDEX16,
 			D3DPOOL_MANAGED,
-			&(g_pIndexBuffer[CurrentEMG][i]),
+			&g_pIndexBuffer[current_emg][i],
 			nullptr);
 		WORD *pIndices = nullptr;
 
-		g_pIndexBuffer[CurrentEMG][i]->Lock(0, IndexCount[i] * sizeof(WORD), reinterpret_cast<void**>(&pIndices), 0);
-		memcpy(pIndices, IndiceArray[i], IndexCount[i] * sizeof(WORD));
-		g_pIndexBuffer[CurrentEMG][i]->Unlock();
+		g_pIndexBuffer[current_emg][i]->Lock(0, index_amount[i] * sizeof(WORD), reinterpret_cast<void**>(&pIndices), 0);
+		memcpy(pIndices, indices_array[i], index_amount[i] * sizeof(WORD));
+		g_pIndexBuffer[current_emg][i]->Unlock();
 	}
 
 	// Create a vertex buffer...
-	g_d3dDevice->CreateVertexBuffer(VertexCount * VertexSize,
+	g_d3dDevice->CreateVertexBuffer(vertex_amount * vertex_size,
 		D3DUSAGE_WRITEONLY,
-		vertex::FVF_Flags,
+		vertex::fvf_flags,
 		D3DPOOL_MANAGED,
-		&(g_pVertexBuffer[CurrentEMG]),
+		&(g_pVertexBuffer[current_emg]),
 		nullptr);
 	void *pVertices = nullptr;
 
-	g_pVertexBuffer[CurrentEMG]->Lock(0, VertexCount * VertexSize, static_cast<void**>(&pVertices), 0);
-	memcpy(pVertices, VertexArray, VertexCount * VertexSize);
-	g_pVertexBuffer[CurrentEMG]->Unlock();
+	g_pVertexBuffer[current_emg]->Lock(0, vertex_amount * vertex_size, static_cast<void**>(&pVertices), 0);
+	memcpy(pVertices, vertex_array, vertex_amount * vertex_size);
+	g_pVertexBuffer[current_emg]->Unlock();
 
 	return S_OK;
 }
 
-HRESULT CD3DRender::LoadDDS(ushort DDScount, unsigned long* DDSsize, byte** DDScontent)
+HRESULT CD3DRender::load_dds(const ushort dds_amount, unsigned long* dds_size, byte** dds_content)
 {
-	g_Texture = new LPDIRECT3DTEXTURE9[DDScount];
-	CD3DRender::DDScount = DDScount;
-	for (ushort i = 0; i < DDScount; i++)
-		D3DXCreateTextureFromFileInMemory(g_d3dDevice, DDScontent[i], DDSsize[i], &g_Texture[i]);
+	g_Texture = new LPDIRECT3DTEXTURE9[dds_amount];
+	CD3DRender::dds_count = dds_amount;
+	for (ushort i = 0; i < dds_amount; i++)
+		D3DXCreateTextureFromFileInMemory(g_d3dDevice, dds_content[i], dds_size[i], &g_Texture[i]);
 
 	return S_OK;
 }
 
-HRESULT CD3DRender::Shutdown()
+HRESULT CD3DRender::shutdown() const
 {
-	for (ushort i = 0; i < EMGcount; i++)
+	for (ushort i = 0; i < emg_count; i++)
 	{
-		for (ushort a = 0; a < EMGsubmodels[i]; a++)
+		for (ushort a = 0; a < emg_submodels[i]; a++)
 		{
 			if (g_pIndexBuffer != nullptr)
 				g_pIndexBuffer[i][a]->Release();
@@ -145,7 +145,7 @@ HRESULT CD3DRender::Shutdown()
 			g_pVertexBuffer[i]->Release();
 	}	
 
-	for (ushort i = 0; i < DDScount; i++)
+	for (ushort i = 0; i < dds_count; i++)
 	{
 		if (g_Texture != nullptr)
 			g_Texture[i]->Release();
@@ -160,14 +160,14 @@ HRESULT CD3DRender::Shutdown()
 	return S_OK;
 }
 
-HRESULT CD3DRender::OnMouseMove(short x, short y, bool RMousing)
+HRESULT CD3DRender::on_mouse_move(const short x, const short y, const bool r_mousing)
 {
 	ptCurrentMousePosit.x = x;
 	ptCurrentMousePosit.y = y;
 
 	if (bMousing)
 	{
-		if (bRMousing != RMousing)
+		if (bRMousing != r_mousing)
 		{
 			m_zoom += float(ptCurrentMousePosit.y - ptLastMousePosit.y) / float(1000);
 		}
@@ -184,7 +184,7 @@ HRESULT CD3DRender::OnMouseMove(short x, short y, bool RMousing)
 	return S_OK;
 }
 
-HRESULT CD3DRender::OnMouseButtonUp()
+HRESULT CD3DRender::on_mouse_button_up()
 {
 	bMousing = false;
 	bRMousing = false;
@@ -192,7 +192,7 @@ HRESULT CD3DRender::OnMouseButtonUp()
 	return S_OK;
 }
 
-HRESULT CD3DRender::OnMouseButtonDown(short x, short y)
+HRESULT CD3DRender::on_mouse_button_down(const short x, const short y)
 {
 	ptLastMousePosit.x = ptCurrentMousePosit.x = x;
 	ptLastMousePosit.y = ptCurrentMousePosit.y = y;
@@ -202,45 +202,45 @@ HRESULT CD3DRender::OnMouseButtonDown(short x, short y)
 	return S_OK;
 }
 
-HRESULT CD3DRender::Reset()
+HRESULT CD3DRender::reset()
 {
 	return S_OK;
 }
 
-HRESULT CD3DRender::ProcessFrame()
+HRESULT CD3DRender::process_frame() const
 {
 	// Clear the backbuffer and the zbuffer
 	g_d3dDevice->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,
 						D3DCOLOR_XRGB(0, 0, 0), 1.0f, 0);
 
-	D3DXMATRIX matTrans;
-	D3DXMATRIX matRot;
-	D3DXMATRIX matWorld;
+	D3DXMATRIX mat_trans;
+	D3DXMATRIX mat_rot;
+	D3DXMATRIX mat_world;
 
-	D3DXMatrixTranslation(&matTrans, 0.0f, 0.0f, m_zoom);
+	D3DXMatrixTranslation(&mat_trans, 0.0f, 0.0f, m_zoom);
 
-	D3DXMatrixRotationYawPitchRoll(	&matRot,
+	D3DXMatrixRotationYawPitchRoll(	&mat_rot,
 									D3DXToRadian(g_fSpinX),
 									D3DXToRadian(g_fSpinY),
 									0.0f);
-	matWorld = matRot * matTrans;
-	g_d3dDevice->SetTransform(D3DTS_WORLD, &matWorld);
+	mat_world = mat_rot * mat_trans;
+	g_d3dDevice->SetTransform(D3DTS_WORLD, &mat_world);
 
 	// Begin the scene
 	if (SUCCEEDED(g_d3dDevice->BeginScene()))
 	{
 		if (g_pIndexBuffer != nullptr && g_pVertexBuffer != nullptr)
 		{
-			for (auto i = 0; i < EMGcount; i++)
+			for (auto i = 0; i < emg_count; i++)
 			{
-				g_d3dDevice->SetStreamSource(0, g_pVertexBuffer[i], 0, VertexSize[i]);
-				g_d3dDevice->SetFVF(vertex::FVF_Flags);				
+				g_d3dDevice->SetStreamSource(0, g_pVertexBuffer[i], 0, vertex_size[i]);
+				g_d3dDevice->SetFVF(vertex::fvf_flags);				
 				
-				for (ushort a = 0; a < EMGsubmodels[i]; a++)
+				for (ushort a = 0; a < emg_submodels[i]; a++)
 				{
 					if (g_Texture != nullptr)
 					{
-						g_d3dDevice->SetTexture(0, g_Texture[DDSid[i][a]]);
+						g_d3dDevice->SetTexture(0, g_Texture[dds_id[i][a]]);
 
 						g_d3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_ANISOTROPIC);
 						g_d3dDevice->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_ANISOTROPIC);
@@ -249,7 +249,7 @@ HRESULT CD3DRender::ProcessFrame()
 					}
 
 					g_d3dDevice->SetIndices(g_pIndexBuffer[i][a]);
-					g_d3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLESTRIP, 0, 0, VertexCount[i], 0, IndexCount[i][a] - 2);		
+					g_d3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLESTRIP, 0, 0, vertex_count[i], 0, index_count[i][a] - 2);		
 				}
 			}
 		}
@@ -263,7 +263,7 @@ HRESULT CD3DRender::ProcessFrame()
 	return S_OK;
 }
 
-HRESULT CD3DRender::Resize(int width, int height)
+HRESULT CD3DRender::resize(const int width, const int height)
 {
 	d3dpp.BackBufferWidth = width;
 	d3dpp.BackBufferHeight = height;
@@ -274,10 +274,10 @@ HRESULT CD3DRender::Resize(int width, int height)
 	g_d3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
 	g_d3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 
-	D3DXMATRIX matProj;
-	D3DXMatrixPerspectiveFovLH(&matProj, D3DXToRadian(45.0f),
+	D3DXMATRIX mat_proj;
+	D3DXMatrixPerspectiveFovLH(&mat_proj, D3DXToRadian(45.0f),
 		float(width) / float(height), 0.1f, 100.0f);
-	g_d3dDevice->SetTransform(D3DTS_PROJECTION, &matProj);
+	g_d3dDevice->SetTransform(D3DTS_PROJECTION, &mat_proj);
 
 	return S_OK;
 }
