@@ -7,173 +7,173 @@ namespace usf4_ce {
 	typedef unsigned short ushort;
 	typedef unsigned long ulong;
 
+	ref struct emg_header sealed
+	{
+		UINT32 number711;
+		UINT32 texture_count;	// Amount of Submodel's textures.
+		UINT32 something;
+		UINT32 texture_offset;	// Position of "Texture offsets" list.
+		UINT16 vertex_count;	// Amount of vertices.
+		UINT16 vertex_size;		// Size of vertex.
+		UINT32 vertex_offset;	// Position of vertexes in file.
+		UINT16 trianlge_strip;	// 1 if true, simple triangle list otherwise 
+		UINT16 submodel_count;	// Submodels in EMG.
+		UINT32 submeshes_list_offset;	// Offset to list of addresses of submeshes.
+	};
+
 	ref struct emg_struct sealed
 	{
-		array<byte>^ dds_id;					// Array of submodel's texture ids.
-		ushort submodel_count;					// Submodels in EMG.
-		array<ushort>^ index_count;				// Array of Indexes amount of each submodel.
-		array<ushort>^ nodes_count;				// Array of Nodes amount of each submodel.
-		ushort vertex_count;					// Amount of vertices.
-		ushort vertex_size;						// Size of vertex.
-		array<array<ushort>^>^ indices_array;	// Array of indeces blocks.
-		array<array<ushort>^>^ nodes_array;		// Array of Nodes.
+		emg_header^ header = gcnew emg_header();
+
+		array<byte>^ dds_id;					// Array of submodel's texture ids.		
+		array<UINT16>^ index_count;				// Array of Indexes amount of each submodel.
+		array<UINT16>^ nodes_count;				// Array of Nodes amount of each submodel.
+		array<array<UINT16>^>^ indices_array;	// Array of indeces blocks.
+		array<array<UINT16>^>^ nodes_array;		// Array of Nodes.
 		array<byte>^ vertex_array;				// Array of vertices blocks.
 	};
 
 	// FileName, EMG position in EMO
 	inline emg_struct^ read_emg(String^ file_name, const int emg_position)
 	{
-		const auto return_value = gcnew emg_struct();
+		const auto emg_data = gcnew emg_struct();
 
 		auto fs = File::OpenRead(file_name);
 		auto br = gcnew BinaryReader(fs);
-		
+
 		fs->Position = emg_position + 16; // 16 - offset EMG header.
 
-		fs->Position = fs->Position + 4; //EMGHeader1->Number711 = (ushort)br->ReadUInt32(); 
-		const auto texture_count = ushort(br->ReadUInt32());			// Amount of Submodel's textures.
-		fs->Position = fs->Position + 4; //EMGHeader1->Something = (ushort)br->ReadUInt32();
-		const auto texture_offset = ushort(br->ReadUInt32());			// Position of "Texture offsets" list.
-
-		const auto vertex_count = ushort(br->ReadUInt16());				// Amount of vertices.
-		const auto vertex_size = ushort(br->ReadUInt16());				// Size of vertex.
-		const auto vertex_offset = ulong(br->ReadUInt32());				// Position of vertexes in file.
-		fs->Position = fs->Position + 2; //EMGHeader1->Empty = (ushort)br->ReadUInt16(); // Empty 2 bytes. (strips?)
-		const auto submodel_count = ushort(br->ReadUInt16());			// Submodels in EMG.
-		const auto submeshes_list_offset = ushort(br->ReadUInt16());	// Offset to list of addresses of submeshes.
+		emg_data->header->number711 = br->ReadUInt32();
+		emg_data->header->texture_count = br->ReadUInt32();
+		emg_data->header->something = br->ReadUInt32();
+		emg_data->header->texture_offset = br->ReadUInt32();
+		emg_data->header->vertex_count = br->ReadUInt16();
+		emg_data->header->vertex_size = br->ReadUInt16();
+		emg_data->header->vertex_offset = br->ReadUInt32();
+		emg_data->header->trianlge_strip = br->ReadUInt16();
+		emg_data->header->submodel_count = br->ReadUInt16();
+		emg_data->header->submeshes_list_offset = br->ReadUInt32();
 
 		//==================================================================
 		// Textures.
 		//==================================================================
-		fs->Position = emg_position + 16 + texture_offset;
+		fs->Position = emg_position + 16 + emg_data->header->texture_offset;
 
-		auto offsets = gcnew array<ushort>(texture_count);
-		for (auto i = 0; i < texture_count; i++)
-			offsets[i] = ushort(br->ReadUInt32());
+		auto offsets = gcnew array<UINT32>(emg_data->header->texture_count);
+		for (UINT32 i = 0; i < emg_data->header->texture_count; i++)
+			offsets[i] = br->ReadUInt32();
 
-		auto id = gcnew array <byte>(texture_count);
-		for (auto i = 0; i < texture_count; i++)
+		auto id = gcnew array <byte>(emg_data->header->texture_count);
+		for (UINT32 i = 0; i < emg_data->header->texture_count; i++)
 		{
 			fs->Position = emg_position + 16 + offsets[i] + 5;
 			id[i] = byte(br->ReadChar());
 		}
 
-		auto DDSid = gcnew array<byte>(submodel_count);
+		emg_data->dds_id = gcnew array<byte>(emg_data->header->submodel_count);
 
 		//==================================================================
 		// Indeces and nodes
 		//==================================================================
-		auto index_count = gcnew array<ushort>(submodel_count); // Array of Indexes amount of each submodel.
-		auto indices_array = gcnew array<array<ushort>^>(submodel_count);
+		emg_data->index_count = gcnew array<UINT16>(emg_data->header->submodel_count); // Array of Indexes amount of each submodel.
+		emg_data->indices_array = gcnew array<array<UINT16>^>(emg_data->header->submodel_count);
 
-		auto nodes_count = gcnew array<ushort>(submodel_count);
-		auto nodes_array = gcnew array<array<ushort>^>(submodel_count);
+		emg_data->nodes_count = gcnew array<UINT16>(emg_data->header->submodel_count);
+		emg_data->nodes_array = gcnew array<array<UINT16>^>(emg_data->header->submodel_count);
 
-		for (ushort i = 0; i < submodel_count; i++)
+		for (auto i = 0; i < emg_data->header->submodel_count; i++)
 		{
-			fs->Position = emg_position + 16 + submeshes_list_offset + i * 4; // Looking for submesh address in a list of submeshes
+			fs->Position = emg_position + 16 + emg_data->header->submeshes_list_offset + i * 4; // Looking for submesh address in a list of submeshes
 			fs->Position = emg_position + 16 + br->ReadUInt32() + 16; // 16 bytes #EMG + offset of submesh + 16 bytes of trash
-			DDSid[i] = id[byte(br->ReadUInt16())]; // Texture ID.
-			index_count[i] = ushort(br->ReadUInt16()); // Ammount of indeces.
-			nodes_count[i] = ushort(br->ReadUInt16()); // Ammount of nodes.
-			
+			emg_data->dds_id[i] = id[byte(br->ReadUInt16())]; // Texture ID.
+			emg_data->index_count[i] = br->ReadUInt16(); // Ammount of indeces.
+			emg_data->nodes_count[i] = br->ReadUInt16(); // Ammount of nodes.
+
 			fs->Position = fs->Position + 32; // skipping name (32 bytes).
 
-			indices_array[i] = gcnew array<ushort>(index_count[i]);
+			emg_data->indices_array[i] = gcnew array<UINT16>(emg_data->index_count[i]);
 
 			// Filling array with submesh indeces.
-			for (auto a = 0; a < index_count[i]; a++)
+			for (auto a = 0; a < emg_data->index_count[i]; a++)
 			{
-				indices_array[i][a] = ushort(br->ReadUInt16());
+				emg_data->indices_array[i][a] = br->ReadUInt16();
 			}
 
-			nodes_array[i] = gcnew array<ushort>(nodes_count[i]);
+			emg_data->nodes_array[i] = gcnew array<UINT16>(emg_data->nodes_count[i]);
 
 			// Filling array with nodes.
-			for (auto a = 0; a < nodes_count[i]; a++)
+			for (auto a = 0; a < emg_data->nodes_count[i]; a++)
 			{
-				nodes_array[i][a] = ushort(br->ReadUInt16());
+				emg_data->nodes_array[i][a] = br->ReadUInt16();
 			}
 		}
 
 		//==================================================================
 		// Vertices
 		//==================================================================
-		fs->Position = emg_position + 16 + vertex_offset; // Address of vertices
-		auto vertex_array = gcnew array<byte>(vertex_count * vertex_size); // Array of vertex data
-		for (auto i = 0; i < vertex_count * vertex_size; i++)
+		fs->Position = emg_position + 16 + emg_data->header->vertex_offset; // Address of vertices
+		emg_data->vertex_array = gcnew array<byte>(emg_data->header->vertex_count * emg_data->header->vertex_size); // Array of vertex data
+		for (auto i = 0; i < emg_data->header->vertex_count * emg_data->header->vertex_size; i++)
 		{
-			vertex_array[i] = byte(br->ReadByte());
+			emg_data->vertex_array[i] = byte(br->ReadByte());
 		}
 
 		br->Close();
 		fs->Close();
 
-		return_value->dds_id = DDSid;
-		return_value->submodel_count = submodel_count;
-		return_value->index_count	= index_count;
-		return_value->nodes_count	= nodes_count;
-		return_value->vertex_count	= vertex_count;
-		return_value->vertex_size	= vertex_size;
-		return_value->indices_array	= indices_array;
-		return_value->nodes_array	= nodes_array;
-		return_value->vertex_array	= vertex_array;
-		return return_value;
+		return emg_data;
 	}
 
 	//==================================================================
 
 	ref struct emb_struct sealed
 	{
-		ushort dds_count;	// DDS ammount in EMB.
-		array<ulong>^ dds_size;		// Size of each DDS.
+		ushort dds_count;				// DDS ammount in EMB.
+		array<ulong>^ dds_size;			// Size of each DDS.
 		array<array<byte>^>^ dds_array;	// DDS itself.
 	};
 
 	inline emb_struct^ read_emb(String^ file_name)
 	{
-		const auto return_value = gcnew emb_struct();
+		const auto emb_data = gcnew emb_struct();
 
 		auto fs = File::OpenRead(file_name);
 		auto br = gcnew BinaryReader(fs);
 
-		// Кол-во DDS.
+		// DDS amount.
 		fs->Position = 12;
-		const ushort dds_count = br->ReadInt16();
+		emb_data->dds_count = br->ReadInt16();
 
-		//
-		auto dds_offset = gcnew array<ulong>(dds_count);
-		auto dds_size = gcnew array<ulong>(dds_count);
-		auto dds_array = gcnew array<array<byte>^>(dds_count);
+		// Reading
+		auto dds_offset = gcnew array<UINT32>(emb_data->dds_count);
+		emb_data->dds_size = gcnew array<ulong>(emb_data->dds_count);
+		emb_data->dds_array = gcnew array<array<byte>^>(emb_data->dds_count);
 
 		// List of offsets to DDS and sizes.
 		fs->Position = 32;
-		for (ulong i = 0; i < dds_count; i++)
+		for (UINT32 i = 0; i < emb_data->dds_count; i++)
 		{
 			dds_offset[i] = br->ReadInt32() + (i * 2 * 4); // + DDSsize
-			dds_size[i] = br->ReadInt32();
+			emb_data->dds_size[i] = br->ReadInt32();
 		}				
 
 		//
-		for (ulong i = 0; i < dds_count; i++)
+		for (UINT32 i = 0; i < emb_data->dds_count; i++)
 		{
-			dds_array[i] = gcnew array<byte>(dds_size[i]);
+			emb_data->dds_array[i] = gcnew array<byte>(emb_data->dds_size[i]);
 
 			fs->Position = 32 + dds_offset[i];
 
-			for (ulong a = 0; a < dds_size[i]; a++)
+			for (UINT32 a = 0; a < emb_data->dds_size[i]; a++)
 			{
-				dds_array[i][a] = byte(br->ReadByte());
+				emb_data->dds_array[i][a] = byte(br->ReadByte());
 			}
 		}
 
 		br->Close();
 		fs->Close();
 
-		return_value->dds_count = dds_count;
-		return_value->dds_size = dds_size;
-		return_value->dds_array = dds_array;
-		return return_value;
+		return emb_data;
 	}
 
 	//==================================================================
@@ -188,7 +188,7 @@ namespace usf4_ce {
 
 	inline skeleton_struct^ read_skeleton(String^ file_name, const byte offset) // EMO - 16, EMA - 12
 	{
-		const auto return_value = gcnew skeleton_struct();
+		const auto skeleton = gcnew skeleton_struct();
 
 		auto fs = File::OpenRead(file_name);
 		auto br = gcnew BinaryReader(fs);
@@ -207,15 +207,15 @@ namespace usf4_ce {
 			auto parent_node_array = gcnew array<short>(1);
 			parent_node_array[0] = short(0xffff);
 
-			return_value->nodes_count = 1;
-			return_value->node_name = node_name;
-			return_value->parent_node_array = parent_node_array;
-			return_value->matrix_4x4 = nullptr;
-			return return_value;
+			skeleton->nodes_count = 1;
+			skeleton->node_name = node_name;
+			skeleton->parent_node_array = parent_node_array;
+			skeleton->matrix_4x4 = nullptr;
+			return skeleton;
 		}
 
 		fs->Position = skeletal_info_offset; // Skipping to data about nodes.
-		const auto nodes_count = br->ReadUInt16(); // Nodes amount.
+		skeleton->nodes_count = br->ReadUInt16(); // Nodes amount.
 
 		fs->Position = fs->Position + 6; // Skipping 4 bytes.
 		const ushort start_offset = br->ReadUInt32(); // Header size.
@@ -224,9 +224,9 @@ namespace usf4_ce {
 		//==================================================================
 
 		fs->Position = skeletal_info_offset + names_offsets_offset; // Offsets to names.
-		auto nodes_names_offsets = gcnew array<UInt32>(nodes_count);
-		auto node_name = gcnew array<String^>(nodes_count);
-		for (unsigned int i = 0; i < nodes_count; i++)
+		auto nodes_names_offsets = gcnew array<UInt32>(skeleton->nodes_count);
+		skeleton->node_name = gcnew array<String^>(skeleton->nodes_count);
+		for (unsigned int i = 0; i < skeleton->nodes_count; i++)
 		{
 			nodes_names_offsets[i] = br->ReadUInt32();
 			const auto saved_position = fs->Position;
@@ -238,7 +238,7 @@ namespace usf4_ce {
 			while (int(ch = byte(br->ReadChar())) != 0)
 				str += Convert::ToChar(ch);
 
-			node_name[i] = str;
+			skeleton->node_name[i] = str;
 
 			fs->Position = saved_position;
 		}
@@ -247,32 +247,28 @@ namespace usf4_ce {
 
 		fs->Position = skeletal_info_offset + start_offset; // Nodes.
 
-		auto parent_node_array = gcnew array<short>(nodes_count);
-		auto matrix_4x4 = gcnew array<array<byte>^>(nodes_count);
+		skeleton->parent_node_array = gcnew array<short>(skeleton->nodes_count);
+		skeleton->matrix_4x4 = gcnew array<array<byte>^>(skeleton->nodes_count);
 
-		for (auto i = 0; i < nodes_count; i++)
+		for (auto i = 0; i < skeleton->nodes_count; i++)
 		{
 			const auto temp = br->ReadUInt16();
 			if (temp == 65535)	// FFFF - root.
-				parent_node_array[i] = -1;	
+				skeleton->parent_node_array[i] = -1;
 			else
-				parent_node_array[i] = temp;
+				skeleton->parent_node_array[i] = temp;
 
 			fs->Position = fs->Position + 14; // Skipping to position about matrix.
 
-			matrix_4x4[i] = gcnew array<byte>(64);
+			skeleton->matrix_4x4[i] = gcnew array<byte>(64);
 			for (ushort a = 0; a < 64; a++)
-				matrix_4x4[i][a] = br->ReadByte();
+				skeleton->matrix_4x4[i][a] = br->ReadByte();
 		}
 
 		br->Close();
 		fs->Close();
 
-		return_value->nodes_count = nodes_count;
-		return_value->node_name = node_name;
-		return_value->parent_node_array = parent_node_array;
-		return_value->matrix_4x4 = matrix_4x4;
-		return return_value;
+		return skeleton;
 	}
 
 	//==================================================================
@@ -351,17 +347,7 @@ namespace usf4_ce {
 			br->Close();
 			fs->Close();
 
-			auto node_name = gcnew array<String^>(1);
-			node_name[0] = "camera";
-
-			auto parent_node_array = gcnew array<short>(1);
-			parent_node_array[0] = short(0xffff);
-
-			/*return_value->nodes_count = 1;
-			return_value->node_name = node_name;
-			return_value->parent_node_array = parent_node_array;
-			return_value->matrix_4x4 = nullptr;*/
-			return ema_skeleton;
+			return nullptr;
 		}
 
 		fs->Position = skeletal_info_offset; // Skipping to data about nodes.
@@ -556,7 +542,7 @@ namespace usf4_ce {
 		ema_data->header->animation_count = br->ReadUInt16();
 
 		fs->Position = header_size; // Animations offsets
-		auto animation_offsets = gcnew array<ulong>(ema_data->header->animation_count);
+		auto animation_offsets = gcnew array<UINT32>(ema_data->header->animation_count);
 		for (auto i = 0; i < ema_data->header->animation_count; i++)
 			animation_offsets[i] = br->ReadUInt32(); //
 
@@ -634,10 +620,10 @@ namespace usf4_ce {
 				{
 					if (ema_data->animation[i]->node[cmd_offset]->transform_flag & 0x40)
 					{
-						const ulong temp_index = br->ReadUInt32();
+						const UINT32 temp_index = br->ReadUInt32();
 						ema_data->animation[i]->node[cmd_offset]->value_indexes[a] = temp_index;
 
-						const unsigned int value_index = temp_index & 0x3FFFFFFF;
+						const UINT32 value_index = temp_index & 0x3FFFFFFF;
 						ema_data->animation[i]->node[cmd_offset]->value[a] = ema_data->animation[i]->values[value_index];
 
 						const byte high_order_bits = temp_index >> 30 & 0x03;
@@ -650,7 +636,7 @@ namespace usf4_ce {
 						const auto temp_index = br->ReadUInt16();
 						ema_data->animation[i]->node[cmd_offset]->value_indexes[a] = temp_index;
 
-						const unsigned int value_index = temp_index & 0x3FFF;
+						const UINT32 value_index = temp_index & 0x3FFF;
 						ema_data->animation[i]->node[cmd_offset]->value[a] = ema_data->animation[i]->values[value_index];
 
 						const byte high_order_bits = temp_index >> 14 & 0x03;

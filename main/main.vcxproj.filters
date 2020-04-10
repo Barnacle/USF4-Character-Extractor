@@ -28,6 +28,9 @@
     <ClInclude Include="Writer.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="SMD.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="AboutBox.resx" />

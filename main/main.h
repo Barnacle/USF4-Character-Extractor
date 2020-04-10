@@ -4,6 +4,7 @@
 #include "Wrapper.h"
 #include "Reader.h"
 #include "Writer.h"
+#include "SMD.h"
 #include <filesystem>
 #include <msclr/marshal_cppstd.h>
 
@@ -22,7 +23,6 @@ namespace usf4_ce {
 	//
 	using namespace System::IO;
 	using namespace System::Text;
-	using namespace System::Globalization;
 	using namespace Microsoft::Win32;
 
 	// Double click fix.
@@ -45,10 +45,12 @@ namespace usf4_ce {
 	public ref class MainForm : public System::Windows::Forms::Form
 	{
 		System::Windows::Forms::ToolStripDropDownButton^  toolStripDropDownButton3;
-		System::Windows::Forms::ToolStripMenuItem^  steamToolStripMenuItem;
+		System::Windows::Forms::ToolStripMenuItem^ homeToolStripMenuItem;
+
 		System::Windows::Forms::ToolStripMenuItem^  originStoreToolStripMenuItem;
 		System::Windows::Forms::ToolStripMenuItem^  MergeSubmodelsToolStripMenuItem;
-		System::Windows::Forms::ToolStripTextBox^  toolStripTextBox1;
+	private: System::Windows::Forms::ToolStripTextBox^ scaleToolStripTextBox1;
+
 		System::Windows::Forms::ToolStripMenuItem^  replaceSkelToolStripMenuItem;
 		System::Windows::Forms::ToolStripMenuItem^  starPoseFixToolStripMenuItem;
 		System::Windows::Forms::ToolStripMenuItem^ refFrametoolStripMenuItem;
@@ -87,7 +89,7 @@ namespace usf4_ce {
 		//NewTreeView^  treeView1;
 
 	public:
-		String^ steam_path = {};
+		String^ home_path = {};
 		String^ emo_path = {};
 		wrapper^ m_D3DWrap;
 
@@ -140,10 +142,10 @@ namespace usf4_ce {
 			this->openToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->exitToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->toolStripDropDownButton3 = (gcnew System::Windows::Forms::ToolStripDropDownButton());
-			this->steamToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
+			this->homeToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->originStoreToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->MergeSubmodelsToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
-			this->toolStripTextBox1 = (gcnew System::Windows::Forms::ToolStripTextBox());
+			this->scaleToolStripTextBox1 = (gcnew System::Windows::Forms::ToolStripTextBox());
 			this->replaceSkelToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->starPoseFixToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->refFrametoolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
@@ -234,8 +236,7 @@ namespace usf4_ce {
 			// 
 			this->toolStripStatusLabel1->Name = L"toolStripStatusLabel1";
 			this->toolStripStatusLabel1->Size = System::Drawing::Size(39, 17);
-			this->toolStripStatusLabel1->Text = L"Ready";
-			this->toolStripStatusLabel1->Visible = false;
+			this->toolStripStatusLabel1->Text = L"Status";
 			// 
 			// toolStrip1
 			// 
@@ -253,6 +254,7 @@ namespace usf4_ce {
 			// 
 			// toolStripDropDownButton1
 			// 
+			this->toolStripDropDownButton1->AutoToolTip = false;
 			this->toolStripDropDownButton1->DisplayStyle = System::Windows::Forms::ToolStripItemDisplayStyle::Text;
 			this->toolStripDropDownButton1->DropDownItems->AddRange(gcnew cli::array< System::Windows::Forms::ToolStripItem^  >(2) {
 				this->openToolStripMenuItem,
@@ -279,10 +281,11 @@ namespace usf4_ce {
 			// 
 			// toolStripDropDownButton3
 			// 
+			this->toolStripDropDownButton3->AutoToolTip = false;
 			this->toolStripDropDownButton3->DisplayStyle = System::Windows::Forms::ToolStripItemDisplayStyle::Text;
 			this->toolStripDropDownButton3->DropDownItems->AddRange(gcnew cli::array< System::Windows::Forms::ToolStripItem^  >(7) {
-				this->steamToolStripMenuItem,
-					this->originStoreToolStripMenuItem, this->MergeSubmodelsToolStripMenuItem, this->toolStripTextBox1, this->replaceSkelToolStripMenuItem,
+				this->homeToolStripMenuItem,
+					this->originStoreToolStripMenuItem, this->MergeSubmodelsToolStripMenuItem, this->scaleToolStripTextBox1, this->replaceSkelToolStripMenuItem,
 					this->starPoseFixToolStripMenuItem, this->refFrametoolStripMenuItem
 			});
 			this->toolStripDropDownButton3->Name = L"toolStripDropDownButton3";
@@ -290,21 +293,19 @@ namespace usf4_ce {
 			this->toolStripDropDownButton3->Size = System::Drawing::Size(53, 22);
 			this->toolStripDropDownButton3->Text = L"Settings";
 			// 
-			// steamToolStripMenuItem
+			// homeToolStripMenuItem
 			// 
-			this->steamToolStripMenuItem->Checked = true;
-			this->steamToolStripMenuItem->CheckState = System::Windows::Forms::CheckState::Checked;
-			this->steamToolStripMenuItem->Name = L"steamToolStripMenuItem";
-			this->steamToolStripMenuItem->Size = System::Drawing::Size(173, 22);
-			this->steamToolStripMenuItem->Text = L"Steam folder";
-			this->steamToolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::steamToolStripMenuItem_Click);
+			this->homeToolStripMenuItem->Name = L"homeToolStripMenuItem";
+			this->homeToolStripMenuItem->Size = System::Drawing::Size(180, 22);
+			this->homeToolStripMenuItem->Text = L"Home folder";
+			this->homeToolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::steamToolStripMenuItem_Click);
 			// 
 			// originStoreToolStripMenuItem
 			// 
 			this->originStoreToolStripMenuItem->Checked = true;
 			this->originStoreToolStripMenuItem->CheckState = System::Windows::Forms::CheckState::Checked;
 			this->originStoreToolStripMenuItem->Name = L"originStoreToolStripMenuItem";
-			this->originStoreToolStripMenuItem->Size = System::Drawing::Size(173, 22);
+			this->originStoreToolStripMenuItem->Size = System::Drawing::Size(180, 22);
 			this->originStoreToolStripMenuItem->Text = L"Origin coord. store";
 			this->originStoreToolStripMenuItem->Visible = false;
 			this->originStoreToolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::originStoreToolStripMenuItem_Click);
@@ -312,23 +313,23 @@ namespace usf4_ce {
 			// MergeSubmodelsToolStripMenuItem
 			// 
 			this->MergeSubmodelsToolStripMenuItem->Name = L"MergeSubmodelsToolStripMenuItem";
-			this->MergeSubmodelsToolStripMenuItem->Size = System::Drawing::Size(173, 22);
+			this->MergeSubmodelsToolStripMenuItem->Size = System::Drawing::Size(180, 22);
 			this->MergeSubmodelsToolStripMenuItem->Text = L"Merge submodels";
 			this->MergeSubmodelsToolStripMenuItem->ToolTipText = L"By texture id";
 			this->MergeSubmodelsToolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::MergeSubmodelsToolStripMenuItem_Click);
 			// 
-			// toolStripTextBox1
+			// scaleToolStripTextBox1
 			// 
-			this->toolStripTextBox1->Name = L"toolStripTextBox1";
-			this->toolStripTextBox1->Size = System::Drawing::Size(100, 23);
-			this->toolStripTextBox1->Text = L"72";
-			this->toolStripTextBox1->TextBoxTextAlign = System::Windows::Forms::HorizontalAlignment::Right;
-			this->toolStripTextBox1->ToolTipText = L"Scale";
+			this->scaleToolStripTextBox1->Name = L"scaleToolStripTextBox1";
+			this->scaleToolStripTextBox1->Size = System::Drawing::Size(100, 23);
+			this->scaleToolStripTextBox1->Text = L"72";
+			this->scaleToolStripTextBox1->TextBoxTextAlign = System::Windows::Forms::HorizontalAlignment::Right;
+			this->scaleToolStripTextBox1->ToolTipText = L"Scale";
 			// 
 			// replaceSkelToolStripMenuItem
 			// 
 			this->replaceSkelToolStripMenuItem->Name = L"replaceSkelToolStripMenuItem";
-			this->replaceSkelToolStripMenuItem->Size = System::Drawing::Size(173, 22);
+			this->replaceSkelToolStripMenuItem->Size = System::Drawing::Size(180, 22);
 			this->replaceSkelToolStripMenuItem->Text = L"Replace skeleton";
 			this->replaceSkelToolStripMenuItem->ToolTipText = L"Quick fix for a T-Pose chars, not for a Star-Pose ones";
 			this->replaceSkelToolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::replaceSkelToolStripMenuItem_Click);
@@ -336,20 +337,21 @@ namespace usf4_ce {
 			// starPoseFixToolStripMenuItem
 			// 
 			this->starPoseFixToolStripMenuItem->Name = L"starPoseFixToolStripMenuItem";
-			this->starPoseFixToolStripMenuItem->Size = System::Drawing::Size(173, 22);
+			this->starPoseFixToolStripMenuItem->Size = System::Drawing::Size(180, 22);
 			this->starPoseFixToolStripMenuItem->Text = L"Star-Pose Fix";
 			this->starPoseFixToolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::starPoseFixToolStripMenuItem_Click);
 			// 
 			// refFrametoolStripMenuItem
 			// 
 			this->refFrametoolStripMenuItem->Name = L"refFrametoolStripMenuItem";
-			this->refFrametoolStripMenuItem->Size = System::Drawing::Size(173, 22);
+			this->refFrametoolStripMenuItem->Size = System::Drawing::Size(180, 22);
 			this->refFrametoolStripMenuItem->Text = L"Reference Frame";
 			this->refFrametoolStripMenuItem->ToolTipText = L"Add Ref. pose frame to animation as \"time 0\"";
 			this->refFrametoolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::refFrametoolStripMenuItem_Click);
 			// 
 			// toolStripDropDownButton2
 			// 
+			this->toolStripDropDownButton2->AutoToolTip = false;
 			this->toolStripDropDownButton2->DisplayStyle = System::Windows::Forms::ToolStripItemDisplayStyle::Text;
 			this->toolStripDropDownButton2->DropDownItems->AddRange(gcnew cli::array< System::Windows::Forms::ToolStripItem^  >(1) { this->aboutToolStripMenuItem });
 			this->toolStripDropDownButton2->Name = L"toolStripDropDownButton2";
@@ -549,18 +551,18 @@ namespace usf4_ce {
 		}
 #pragma endregion
 
+		System::Void SetStatus(String^ status)
+		{
+			toolStripStatusLabel1->Text = status;
+			statusStrip1->Invalidate();
+			statusStrip1->Update();
+			statusStrip1->Refresh();
+			Application::DoEvents();
+		}
+
 		System::Void MainForm_Load(System::Object^ sender, System::EventArgs^ e) {
 			this->toolStripDropDownButton3->DropDown->Closing += gcnew ToolStripDropDownClosingEventHandler(this, &MainForm::contextMenuStrip_Closing);
-
-			try {
-				auto rk = Registry::CurrentUser->OpenSubKey("Software\\Valve\\Steam", false);
-				steam_path = rk->GetValue("SteamPath")->ToString();
-				steam_path = steam_path->Replace("/", "\\");
-				steam_path += "\\SteamApps\\common\\Super Street Fighter IV - Arcade Edition\\resource\\battle\\chara";
-				rk->Close();
-			}
-			catch (...) {}
-
+			
 			auto config = gcnew Xml::XmlDocument;
 
 			const auto file = Directory::GetCurrentDirectory() + "\\config.cfg";
@@ -568,22 +570,23 @@ namespace usf4_ce {
 			if (File::Exists(file))
 			{
 				config->Load(file);
-				auto root_elem = config->DocumentElement;
+				const auto root_elem = config->DocumentElement;
 				auto d = root_elem->ChildNodes;
 
 				for(auto i = 0; i < d->Count; i++)
 				{
-					if(d[i]->Name == "steam" && d[i]->InnerText != steamToolStripMenuItem->Checked.ToString())
+					if(d[i]->Name == "home_path" && d[i]->InnerText != "")
 					{
-						steamToolStripMenuItem->Checked = false;
+						home_path = d[i]->InnerText;
+						homeToolStripMenuItem->Checked = true;
 					}
 					else if (d[i]->Name == "merge_submodel" && d[i]->InnerText != MergeSubmodelsToolStripMenuItem->Checked.ToString())
 					{
 						MergeSubmodelsToolStripMenuItem->Checked = true;
 					}
-					else if (d[i]->Name == "scale" && d[i]->InnerText != toolStripTextBox1->Text)
+					else if (d[i]->Name == "scale" && d[i]->InnerText != scaleToolStripTextBox1->Text)
 					{
-						toolStripTextBox1->Text = d[i]->InnerText;
+						scaleToolStripTextBox1->Text = d[i]->InnerText;
 					}
 					else if (d[i]->Name == "replace_skeleton" && d[i]->InnerText != replaceSkelToolStripMenuItem->Checked.ToString())
 					{
@@ -605,22 +608,49 @@ namespace usf4_ce {
 					{
 						backupEMAToolStripMenuItem->Checked = true;
 					}
+					else if (d[i]->Name == "win_state" && d[i]->InnerText == FormWindowState::Maximized.ToString())
+					{
+						WindowState = FormWindowState::Maximized;
+					}
+					else if (d[i]->Name == "pos_top" && d[i]->InnerText != Top.ToString())
+					{
+						Top = Int32::Parse(d[i]->InnerText);
+					}
+					else if (d[i]->Name == "pos_left" && d[i]->InnerText != Left.ToString())
+					{
+						Left = Int32::Parse(d[i]->InnerText);
+					}
+					else if (d[i]->Name == "pos_height" && d[i]->InnerText != Height.ToString())
+					{
+						Height = Int32::Parse(d[i]->InnerText);
+					}
+					else if (d[i]->Name == "pos_width" && d[i]->InnerText != Width.ToString())
+					{
+						Width = Int32::Parse(d[i]->InnerText);
+					}
+					else if (d[i]->Name == "pos_toolspitter" && d[i]->InnerText != TopSplitContainer->SplitterDistance.ToString())
+					{
+						TopSplitContainer->SplitterDistance = Int32::Parse(d[i]->InnerText);
+					}
 				}
 			}
+
+			toolStripStatusLabel1->Tag = String::Empty;
+			SetStatus("Ready");
 		}
 
 		System::Void MainForm_FormClosing(System::Object^ sender, System::Windows::Forms::FormClosingEventArgs^ e) {
 			auto config = gcnew Xml::XmlDocument;
 
 			//auto xmlDeclaration = config->CreateXmlDeclaration("1.0", "UTF-8", nullptr);
-			auto root = config->DocumentElement;
+			//auto root = config->DocumentElement;
 			//config->InsertBefore(xmlDeclaration, root);
 
 			auto root_elem = config->CreateElement(String::Empty, "settings", String::Empty);
 			config->AppendChild(root_elem);
 
-			auto setting1 = config->CreateElement(String::Empty, "steam", String::Empty);
-			setting1->AppendChild(config->CreateTextNode(steamToolStripMenuItem->Checked.ToString()));
+			auto setting1 = config->CreateElement(String::Empty, "home_path", String::Empty);
+			setting1->AppendChild(config->CreateTextNode(home_path));
 			root_elem->AppendChild(setting1);
 
 			auto setting2 = config->CreateElement(String::Empty, "merge_submodel", String::Empty);
@@ -628,7 +658,7 @@ namespace usf4_ce {
 			root_elem->AppendChild(setting2);
 
 			auto setting3 = config->CreateElement(String::Empty, "scale", String::Empty);
-			setting3->AppendChild(config->CreateTextNode(toolStripTextBox1->Text));
+			setting3->AppendChild(config->CreateTextNode(scaleToolStripTextBox1->Text));
 			root_elem->AppendChild(setting3);
 
 			auto setting4 = config->CreateElement(String::Empty, "replace_skeleton", String::Empty);
@@ -650,6 +680,30 @@ namespace usf4_ce {
 			auto setting8 = config->CreateElement(String::Empty, "backup2", String::Empty);
 			setting8->AppendChild(config->CreateTextNode(backupEMAToolStripMenuItem->Checked.ToString()));
 			root_elem->AppendChild(setting8);
+
+			auto setting9 = config->CreateElement(String::Empty, "win_state", String::Empty);
+			setting9->AppendChild(config->CreateTextNode(WindowState.ToString()));
+			root_elem->AppendChild(setting9);
+
+			auto setting10 = config->CreateElement(String::Empty, "pos_top", String::Empty);
+			setting10->AppendChild(config->CreateTextNode(Top.ToString()));
+			root_elem->AppendChild(setting10);
+
+			auto setting11 = config->CreateElement(String::Empty, "pos_left", String::Empty);
+			setting11->AppendChild(config->CreateTextNode(Left.ToString()));
+			root_elem->AppendChild(setting11);
+
+			auto setting12 = config->CreateElement(String::Empty, "pos_height", String::Empty);
+			setting12->AppendChild(config->CreateTextNode(Height.ToString()));
+			root_elem->AppendChild(setting12);
+
+			auto setting13 = config->CreateElement(String::Empty, "pos_width", String::Empty);
+			setting13->AppendChild(config->CreateTextNode(Width.ToString()));
+			root_elem->AppendChild(setting13);
+
+			auto setting14 = config->CreateElement(String::Empty, "pos_toolspitter", String::Empty);
+			setting14->AppendChild(config->CreateTextNode(TopSplitContainer->SplitterDistance.ToString()));
+			root_elem->AppendChild(setting14);
 
 			config->Save(Directory::GetCurrentDirectory() + "\\config.cfg");
 		}
@@ -677,15 +731,17 @@ namespace usf4_ce {
 		System::Void openToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e) {
 			auto openFileDialog1 = gcnew OpenFileDialog();
 			openFileDialog1->RestoreDirectory = true;
-			if (steamToolStripMenuItem->Checked && steam_path != String::Empty)
+			if (homeToolStripMenuItem->Checked && home_path != String::Empty)
 			{
-				openFileDialog1->InitialDirectory = steam_path;
+				openFileDialog1->InitialDirectory = home_path;
 			}		
 			openFileDialog1->Filter = "SF4 model|*obj.emo";
 			openFileDialog1->Title = "Select model";
 
 			if (openFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK)
 			{
+				SetStatus("Loading Files...");
+
 				treeView1->Nodes[0]->Nodes->Clear();
 				treeView1->Nodes[1]->Nodes->Clear();
 				treeView1->Nodes[2]->Nodes->Clear();
@@ -776,8 +832,8 @@ namespace usf4_ce {
 							// pin outer array<ushort*>^
 							const pin_ptr<ushort*> pin = &arrays[0];
 
-							m_D3DWrap->load_emg(i, emg_data[i]->submodel_count, npDDSid, npIndexCount,
-								emg_data[i]->vertex_count, emg_data[i]->vertex_size, pin, npVertexArray);
+							m_D3DWrap->load_emg(i, emg_data[i]->header->submodel_count, npDDSid, npIndexCount,
+								emg_data[i]->header->vertex_count, emg_data[i]->header->vertex_size, emg_data[i]->header->trianlge_strip, pin, npVertexArray);
 						}
 						catch (...)
 						{
@@ -890,7 +946,7 @@ namespace usf4_ce {
 					// Animations
 					//==================================================================
 
-					array<Char>^ trim_chars2 = { '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+					//array<Char>^ trim_chars2 = { '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 					//const auto name2 = name->TrimEnd(trim_chars2);
 
 					auto files = Directory::GetFiles(path);
@@ -910,6 +966,14 @@ namespace usf4_ce {
 
 				br->Close();
 				fs->Close();
+
+				if(toolStripStatusLabel1->Tag == String::Empty)
+					SetStatus("Done");
+				else
+					SetStatus("Failed to load: " + toolStripStatusLabel1->Tag);
+
+				toolStripStatusLabel1->Tag = String::Empty;
+				//System::Media::SystemSounds::Beep->Play();
 			}
 		}
 
@@ -974,6 +1038,7 @@ namespace usf4_ce {
 					}
 					catch (...)
 					{
+						toolStripStatusLabel1->Tag += (name + " ");
 						delete ema_data;
 					}
 				}
@@ -986,8 +1051,11 @@ namespace usf4_ce {
 		System::Void button1_Click(System::Object^ sender, System::EventArgs^ e) {
 			 treeView1->Enabled = false;
 
+			 SetStatus("Starting extract...");
+			 toolStripStatusLabel1->Tag = String::Empty;
+
 			 array<Char>^ trim_chars = { 'o', 'b', 'e', 'm', 'j', '.' };
-			 auto path = Path::GetDirectoryName(emo_path);
+			 const auto path = Path::GetDirectoryName(emo_path);
 			 auto name = Path::GetFileName(emo_path)->TrimEnd(trim_chars);
 
 			 if (treeView1->Nodes[0]->Checked == true) // mesh
@@ -1000,296 +1068,13 @@ namespace usf4_ce {
 
 				 if (saveFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK)
 				 {
-					 auto fs = File::OpenRead(emo_path);
-					 auto br = gcnew BinaryReader(fs);
-					 auto sw = gcnew StreamWriter(saveFileDialog1->FileName);
+					 write_smd(emo_path, name, saveFileDialog1->FileName, m_D3DWrap, treeView1,
+						 scaleToolStripTextBox1->Text, replaceSkelToolStripMenuItem->Checked,
+						 starPoseFixToolStripMenuItem->Checked, MergeSubmodelsToolStripMenuItem->Checked);
 
-					 auto scale = ushort::Parse(toolStripTextBox1->Text);
-
-					 sw->WriteLine("version 1");
-
-					 //==================================================================
-					 // Nodes tree.
-					 //==================================================================
-
-					 auto skeleton_data = read_skeleton(emo_path, 16);
-
-					 sw->WriteLine("nodes");					 
-
-					 for (ushort i = 0; i < skeleton_data->nodes_count; i++) // 
-					 {
-						 auto node_name = skeleton_data->node_name[i];
-						 sw->WriteLine(i + " " + "\"" + node_name + "\"" + " " + skeleton_data->parent_node_array[i]); //" \"root\"  child+1
-					 }						 
-
-					 sw->WriteLine("end");
-
-					 //==================================================================
-					 // Position of nodes.
-					 //==================================================================
-					 sw->WriteLine("skeleton");
-					 sw->WriteLine("time 0");		
-
-					 float structure[500][6];
-					 std::string names[500];
-					 if (replaceSkelToolStripMenuItem->Checked == true) // If animation is not selected, exporting original skeleton.
-					 {		
-						 array<Char>^ trim_chars2 = { '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-						 auto name2 = name->TrimEnd(trim_chars2);
-
-						 auto anim_name = gcnew String(path + "\\" + name2 + ".obj.ema");
-						 m_D3DWrap->setup_ema(anim_name, 0);
-						 m_D3DWrap->update_ema(structure, names, "NONE", 0);
-					 }
-
-					 using Runtime::InteropServices::GCHandle;
-					 using Runtime::InteropServices::GCHandleType;
-
-					 auto pins = gcnew array<GCHandle>(skeleton_data->matrix_4x4->Length);
-					 for (auto a = 0, i_max = pins->Length; a != i_max; ++a)
-						 pins[a] = GCHandle::Alloc(skeleton_data->matrix_4x4[a], GCHandleType::Pinned);
-
-					 auto arrays = gcnew array<byte*>(pins->Length);
-					 for (auto a = 0, i_max = arrays->Length; a != i_max; ++a)
-						 arrays[a] = static_cast<byte*>(pins[a].AddrOfPinnedObject().ToPointer());
-
-					 // pin outer array<int*>^
-					 pin_ptr<byte*> pin = &arrays[0];
-
-					 for (ushort i = 0; i < skeleton_data->nodes_count; i++) // 
-					 {
-						 auto en_us = gcnew CultureInfo("en-US");
-
-						 auto tx = *reinterpret_cast<float*>(pin[i] + 48); // 12
-						 auto ty = *reinterpret_cast<float*>(pin[i] + 56); // 14
-						 auto tz = -*reinterpret_cast<float*>(pin[i] + 52); // 13
-
-						 auto rx = atan2(-*reinterpret_cast<float*>(pin[i] + 36), *reinterpret_cast<float*>(pin[i] + 20)); // 9, 5
-						 auto ry = -atan2(-*reinterpret_cast<float*>(pin[i] + 8), *reinterpret_cast<float*>(pin[i])); // 2, 0						 
-						 auto rz = asin(*reinterpret_cast<float*>(pin[i] + 4)); // 1
-
-						 if (replaceSkelToolStripMenuItem->Checked == true) // If not checked, exporting original skeleton.
-						 {
-							 auto node_name = skeleton_data->node_name[i]; // Name of current node.	
-
-							 array<Char>^ trim_chars2 = { '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-							 auto name2 = name->TrimEnd(trim_chars2);
-							 auto skeleton_data2 = read_skeleton(path + "\\" + name2 + ".obj.ema", 12);
-
-							 for (ushort nodes = 0; nodes < skeleton_data2->nodes_count; nodes++) // Replacing values of current node with values of reference skeleton from animation.
-							 {
-								 auto name_temp(names[nodes]);
-								 auto name_clr = gcnew String(name_temp.c_str());
-
-								 if (name_clr == node_name)
-								 {
-									 tx = structure[nodes][0];
-									 ty = structure[nodes][1];
-									 tz = structure[nodes][2];
-									 rx = structure[nodes][3];
-									 rz = structure[nodes][4];
-
-									 if (starPoseFixToolStripMenuItem->Checked == true)
-									 {
-										 if (name_clr == "RLegRoot" || name_clr == "RLegDir")
-											 ry = -float(0.610842);
-										 else if (name_clr == "LLegRoot" || name_clr == "LLegDir")
-											 ry = float(0.610842);
-										 else 
-											 ry = structure[nodes][5];
-									 }
-									 else
-										ry = structure[nodes][5];
-								 }
-							 }
-						 }	
-						 else
-						 {
-							 if (i == 0) // Need to rotate.
-								 rx = float(1.570796);
-						 }
-
-						 sw->WriteLine(i + " "
-							 + (-tx * scale).ToString("F6", en_us) + " "
-							 + (ty * scale).ToString("F6", en_us) + " "
-							 + (tz * scale).ToString("F6", en_us) + " "
-
-							 + rx.ToString("F6", en_us) + " "
-							 + (-rz).ToString("F6", en_us) + " "
-							 + (-ry).ToString("F6", en_us) );
-					 }
-					 delete skeleton_data;
-					 sw->WriteLine("end");
-
-					 //==================================================================
-					 // Triangles
-					 //==================================================================
-					 fs->Position = 32; // Skipping 32 bytes to position about EMG ammount.
-					 ushort emg_count = br->ReadInt16();
-					 fs->Position = 32 + 8; // Position of "offsets list" of every EMG.
-
-					 auto emg_offsets = gcnew array<int>(emg_count);
-					 auto emg_data = gcnew array<emg_struct^>(emg_count);
-					 
-					 sw->WriteLine("triangles");
-
-					 for (auto current_emg = 0; current_emg < emg_count; current_emg++)
-					 {
-						 emg_offsets[current_emg] = br->ReadInt32(); // Filling array with list.
-						 emg_data[current_emg] = read_emg(emo_path, 32 + emg_offsets[current_emg] + 16); // Filling array with data about each EMG.
-
-						 if (treeView1->Nodes[0]->Nodes[current_emg]->Checked)
-						 {
-							 for (auto current_submodel = 0; current_submodel < emg_data[current_emg]->submodel_count; current_submodel++)
-							 {
-								 for (ushort i = 0; i < emg_data[current_emg]->index_count[current_submodel] - 2; i++)
-								 {
-									 auto en_us = gcnew CultureInfo("en-US");
-
-									 int a, b, c;
-
-									 String^ texture;
-									 if (MergeSubmodelsToolStripMenuItem->Checked)
-										 texture = name + "_" + (emg_data[current_emg]->dds_id[current_submodel] + 1) + ".dds";
-									 else
-										 texture = current_emg + "_" + name + "_" + (emg_data[current_emg]->dds_id[current_submodel] + 1) + ".dds";
-
-									 if (i % 2 == 0)
-									 {
-										 a = emg_data[current_emg]->indices_array[current_submodel][i + 0];
-										 b = emg_data[current_emg]->indices_array[current_submodel][i + 1];
-										 c = emg_data[current_emg]->indices_array[current_submodel][i + 2];
-
-										 if (a != b && b != c) // skipping degenerate triangle
-										 {
-											 sw->WriteLine(texture);
-
-											 for (char x = 2; x > -1; x--)
-											 {
-												 int index = emg_data[current_emg]->indices_array[current_submodel][i + x];
-												 pin_ptr<byte> pVertexArray = &emg_data[current_emg]->vertex_array[0];
-
-												 sw->Write("0 "
-													 // PosX PosY PosZ
-													 + (-*reinterpret_cast<float*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray)) * scale).ToString("F6", en_us) + " "
-													 + (*reinterpret_cast<float*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray) + 4) * scale).ToString("F6", en_us) + " "
-													 + (*reinterpret_cast<float*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray) + 8) * scale).ToString("F6", en_us) + " "
-													 // NormX NormY NormZ
-													 + (*reinterpret_cast<float*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray) + 12)).ToString("F6", en_us) + " "
-													 + (*reinterpret_cast<float*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray) + 16)).ToString("F6", en_us) + " "
-													 + (*reinterpret_cast<float*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray) + 20)).ToString("F6", en_us) + " "
-													 // U V
-													 + (*reinterpret_cast<float*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray) + 24)).ToString("F6", en_us) + " "
-													 + (-*reinterpret_cast<float*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray) + 28)).ToString("F6", en_us) + " ");
-												 
-												 byte BoneID[4];
-												 for (byte num = 0; num < 4; num++)
-													 BoneID[num] = *reinterpret_cast<byte*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray) + 48 + num);
-												 float weight[3];
-												 for (byte num = 0; num < 3; num++)
-													 weight[num] = *reinterpret_cast<float*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray) + 52 + (num * 4));
-
-												 if (weight[0] != 0 && weight[1] == 0) // if 1
-													 sw->WriteLine("1 " + emg_data[current_emg]->nodes_array[current_submodel][BoneID[0]].ToString() + " 1");
-												 else if (weight[0] != 0 && weight[1] != 0 && weight[2] == 0) // if 2
-													 sw->WriteLine("2 " + emg_data[current_emg]->nodes_array[current_submodel][BoneID[0]].ToString() + " "
-													 + weight[0].ToString("F6", en_us) + " "
-													 + emg_data[current_emg]->nodes_array[current_submodel][BoneID[1]].ToString() + " "
-													 + weight[1].ToString("F6", en_us));
-												 else if (weight[0] + weight[1] + weight[2] > 0.999) // if 3
-													 sw->WriteLine("3 " + emg_data[current_emg]->nodes_array[current_submodel][BoneID[0]].ToString() + " "
-													 + weight[0].ToString("F6", en_us) + " "
-													 + emg_data[current_emg]->nodes_array[current_submodel][BoneID[1]].ToString() + " "
-													 + weight[1].ToString("F6", en_us) + " "
-													 + emg_data[current_emg]->nodes_array[current_submodel][BoneID[2]].ToString() + " "
-													 + weight[2].ToString("F6", en_us));
-												 else // if 4
-													 sw->WriteLine("4 " + emg_data[current_emg]->nodes_array[current_submodel][BoneID[0]].ToString() + " "
-													 + weight[0].ToString("F6", en_us) + " "
-													 + emg_data[current_emg]->nodes_array[current_submodel][BoneID[1]].ToString() + " "
-													 + weight[1].ToString("F6", en_us) + " "
-													 + emg_data[current_emg]->nodes_array[current_submodel][BoneID[2]].ToString() + " "
-													 + weight[2].ToString("F6", en_us) + " "
-													 + emg_data[current_emg]->nodes_array[current_submodel][BoneID[3]].ToString() + " "
-													 + (1 - (weight[0] + weight[1] + weight[2])).ToString("F6", en_us));
-											 }
-										 }
-									 }
-									 else
-									 {
-										 a = emg_data[current_emg]->indices_array[current_submodel][i + 2];
-										 b = emg_data[current_emg]->indices_array[current_submodel][i + 1];
-										 c = emg_data[current_emg]->indices_array[current_submodel][i + 0];
-
-										 if (a != b && b != c)
-										 {
-											 sw->WriteLine(texture);
-
-											 for (char x = 0; x < 3; x++)
-											 {
-												 int index = emg_data[current_emg]->indices_array[current_submodel][i + x];
-												 pin_ptr<byte> pVertexArray = &emg_data[current_emg]->vertex_array[0];
-
-												 sw->Write("0 "
-													 // PosX PosY PosZ
-													 + (-*reinterpret_cast<float*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray)) * scale).ToString("F6", en_us) + " "
-													 + (*reinterpret_cast<float*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray) + 4) * scale).ToString("F6", en_us) + " "
-													 + (*reinterpret_cast<float*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray) + 8) * scale).ToString("F6", en_us) + " "
-													 // NormX NormY NormZ
-													 + (*reinterpret_cast<float*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray)  + 12)).ToString("F6", en_us) + " "
-													 + (*reinterpret_cast<float*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray) + 16)).ToString("F6", en_us) + " "
-													 + (*reinterpret_cast<float*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray) + 20)).ToString("F6", en_us) + " "
-													 // U V
-													 + (*reinterpret_cast<float*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray) + 24)).ToString("F6", en_us) + " "
-													 + (-*reinterpret_cast<float*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray) + 28)).ToString("F6", en_us) + " ");
-
-												 byte BoneID[4];
-												 for (byte num = 0; num < 4; num++)
-													 BoneID[num] = *reinterpret_cast<byte*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray) + 48 + num);
-												 float weight[3];
-												 for (byte num = 0; num < 3; num++)
-													 weight[num] = *reinterpret_cast<float*>(index * emg_data[current_emg]->vertex_size + int(pVertexArray) + 52 + (num * 4));
-
-												 if (weight[0] != 0 && weight[1] == 0)
-													 sw->WriteLine("1 " + emg_data[current_emg]->nodes_array[current_submodel][BoneID[0]].ToString() + " 1");
-												 else if (weight[0] != 0 && weight[1] != 0 && weight[2] == 0)
-													 sw->WriteLine("2 " + emg_data[current_emg]->nodes_array[current_submodel][BoneID[0]].ToString() + " "
-													 + weight[0].ToString("F6", en_us) + " "
-													 + emg_data[current_emg]->nodes_array[current_submodel][BoneID[1]].ToString() + " "
-													 + weight[1].ToString("F6", en_us));
-												 else if (weight[0] + weight[1] + weight[2] > 0.999)
-													 sw->WriteLine("3 " + emg_data[current_emg]->nodes_array[current_submodel][BoneID[0]].ToString() + " "
-													 + weight[0].ToString("F6", en_us) + " "
-													 + emg_data[current_emg]->nodes_array[current_submodel][BoneID[1]].ToString() + " "
-													 + weight[1].ToString("F6", en_us) + " "
-													 + emg_data[current_emg]->nodes_array[current_submodel][BoneID[2]].ToString() + " "
-													 + weight[2].ToString("F6", en_us));
-												 else 
-													 sw->WriteLine("4 " + emg_data[current_emg]->nodes_array[current_submodel][BoneID[0]].ToString() + " "
-													 + weight[0].ToString("F6", en_us) + " "
-													 + emg_data[current_emg]->nodes_array[current_submodel][BoneID[1]].ToString() + " "
-													 + weight[1].ToString("F6", en_us) + " "
-													 + emg_data[current_emg]->nodes_array[current_submodel][BoneID[2]].ToString() + " "
-													 + weight[2].ToString("F6", en_us) + " "
-													 + emg_data[current_emg]->nodes_array[current_submodel][BoneID[3]].ToString() + " "
-													 + (1 - (weight[0] + weight[1] + weight[2])).ToString("F6", en_us));
-											 }
-										 }
-									 }
-								 }
-							 }
-						 }
-
-						 delete emg_data[current_emg];
-					 }
-					 
-					 sw->Write("end");
-
-					 sw->Close();
-					 br->Close();
-					 fs->Close();
-
-					 MessageBox::Show("Mesh extracted", "Done", MessageBoxButtons::OK);
+					 SetStatus("Mesh extracted");
+					 toolStripStatusLabel1->Tag = String::Empty;
+					 System::Media::SystemSounds::Beep->Play();
 				 }
 			 }
 
@@ -1301,12 +1086,19 @@ namespace usf4_ce {
 				 saveFileDialog1->RestoreDirectory = true;
 
 				 if (saveFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK)
-				 {		 
+				 {
+					 int checked_count = 0;
+					 for (auto node = 0; node < treeView1->Nodes[1]->LastNode->Index; node++)
+					 {
+						 if (treeView1->Nodes[1]->Nodes[node]->Checked)
+							 checked_count++;
+					 }
+
 					 for (auto node = 0; node < treeView1->Nodes[1]->LastNode->Index; node++)
 					 {
 						 if (treeView1->Nodes[1]->Nodes[node]->Checked)
 						 {
-							 auto temp = path + "\\" + treeView1->Nodes[1]->Nodes[node]->Text;
+							 const auto temp = path + "\\" + treeView1->Nodes[1]->Nodes[node]->Text;
 							 auto emb_data = read_emb(temp);
 
 							 auto temp_name = treeView1->Nodes[1]->Nodes[node]->Text;
@@ -1315,11 +1107,11 @@ namespace usf4_ce {
 
 							 for (auto i = 0; i < emb_data->dds_count; i++)
 							 {
-								 auto output_path = Path::GetDirectoryName(saveFileDialog1->FileName);
+								 const auto output_path = Path::GetDirectoryName(saveFileDialog1->FileName);
 								 auto fs = gcnew FileStream(output_path + "\\" + name_arr[0] + "_" + name_arr[1] + "_" + (i+1) + "_" + name_arr[2] + ".dds", FileMode::Create, FileAccess::ReadWrite);
 								 auto bw = gcnew BinaryWriter(fs);
 
-								 for (ulong a = 0; a < emb_data->dds_size[i]; a++)
+								 for (UINT32 a = 0; a < emb_data->dds_size[i]; a++)
 									 bw->Write(emb_data->dds_array[i][a]);
 
 								 bw->Close();
@@ -1327,6 +1119,8 @@ namespace usf4_ce {
 							 }
 
 							 delete emb_data;
+
+							 SetStatus("Textures: " + (node + 1) + " out of " + checked_count);
 						 }
 					 }					 
 
@@ -1337,11 +1131,11 @@ namespace usf4_ce {
 
 						 for (auto i = 0; i < emb_data->dds_count; i++)
 						 {
-							 auto output_path = Path::GetDirectoryName(saveFileDialog1->FileName);
+							 const auto output_path = Path::GetDirectoryName(saveFileDialog1->FileName);
 							 auto fs = gcnew FileStream(output_path + "\\" + name + "_" + i + ".nml.dds", FileMode::Create, FileAccess::ReadWrite);
 							 auto bw = gcnew BinaryWriter(fs);
 
-							 for (ulong a = 0; a < emb_data->dds_size[i]; a++)
+							 for (UINT32 a = 0; a < emb_data->dds_size[i]; a++)
 								 bw->Write(emb_data->dds_array[i][a]);
 
 							 bw->Close();
@@ -1349,8 +1143,11 @@ namespace usf4_ce {
 						 }
 
 						 delete emb_data;
-					 }					
-					 MessageBox::Show("Textures extracted", "Done", MessageBoxButtons::OK);
+					 }
+
+					 SetStatus("Textures extracted");
+					 toolStripStatusLabel1->Tag = String::Empty;
+					 System::Media::SystemSounds::Beep->Play();
 				 }
 			 }
 
@@ -1358,7 +1155,7 @@ namespace usf4_ce {
 			 {
 				 auto saveFileDialog1 = gcnew SaveFileDialog();
 				 array<Char>^ trim_chars2 = { '_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-				 auto name2 = name->TrimEnd(trim_chars2);
+				 const auto name2 = name->TrimEnd(trim_chars2);
 				 saveFileDialog1->FileName = name2 + "_anim";
 				 saveFileDialog1->Filter = "SMD animation|*.smd";
 				 saveFileDialog1->RestoreDirectory = true;
@@ -1372,153 +1169,38 @@ namespace usf4_ce {
 						 auto file_node = safe_cast<TreeNode^>(anim_files_enum->Current);
 						 if (file_node->Checked) // *.*.ema file
 						 {
+							 auto checked_count = 0;
+							 for (auto node = 0; node < file_node->LastNode->Index + 1; node++)
+							 {
+								 if (file_node->Nodes[node]->Checked)
+									 checked_count++;
+							 }
+
 							 auto my_enum = treeView1->Nodes[2]->Nodes[file_node->Index]->Nodes->GetEnumerator();
 
-							 auto anim_name = gcnew String(path + "\\" + file_node->Text);
-
+							 auto index = 0;
 							 while (my_enum->MoveNext())
 							 {
-								 auto tree_node = safe_cast<TreeNode^>(my_enum->Current);
+								 const auto tree_node = safe_cast<TreeNode^>(my_enum->Current);
 								 if (tree_node->Checked) // Animation in *.*.ema file
 								 {
-									 m_D3DWrap->setup_ema(anim_name, 0);
+									 write_anim(emo_path, file_node->Text, saveFileDialog1->FileName, tree_node->Text, tree_node->Index, m_D3DWrap,
+										 scaleToolStripTextBox1->Text, refFrametoolStripMenuItem->Checked);
 
-									 auto output_path = Path::GetDirectoryName(saveFileDialog1->FileName);
-
-									 Directory::CreateDirectory(output_path + "\\" + file_node->Text);
-
-									 auto sw = gcnew StreamWriter(output_path + "\\" + file_node->Text + "\\" + tree_node->Text + ".smd");
-
-									 auto en_us = gcnew CultureInfo("en-US");
-
-									 auto scale = ushort::Parse(toolStripTextBox1->Text);
-
-									 sw->WriteLine("version 1");
-
-									 //==================================================================
-									 // Nodes tree.
-									 //==================================================================					 
-
-									 auto skeleton_data = read_skeleton(path + "\\" + file_node->Text, 12);
-
-									 sw->WriteLine("nodes");
-
-									 for (ushort i = 0; i < skeleton_data->nodes_count; i++) // 
-									 {
-										 auto node_name = skeleton_data->node_name[i];
-										 sw->WriteLine(i + " " + "\"" + node_name + "\"" + " " + skeleton_data->parent_node_array[i]); //" \"root\"  child+1
-									 }
-
-									 sw->WriteLine("end");
-
-									 //==================================================================
-									 // Nodes position.
-									 //==================================================================
-
-									 sw->WriteLine("skeleton");
-
-									 auto ema_data = read_ema(path + "\\" + file_node->Text);
-
-									 auto animation_name = gcnew String(ema_data->animation[tree_node->Index]->name);
-									 int duration = ema_data->animation[tree_node->Index]->duration;
-
-									 float structure[500][6];
-									 std::string names[500];
-
-									 auto RLegRoot = gcnew String("");
-									 auto LLegRoot = gcnew String("");
-									 auto LArmRoot = gcnew String("");
-									 auto RArmRoot = gcnew String("");
-
-									 // Reference frame.
-									 m_D3DWrap->update_ema(structure, names, "ref", 0);
-
-									 if (refFrametoolStripMenuItem->Checked == true)
-										sw->WriteLine("time 0");
-
-									 for (auto i = 0; i < skeleton_data->nodes_count; i++)
-									 {
-										 auto name_clr = gcnew String(names[i].c_str());
-
-										 if (i == 0)
-										 {
-											 if (refFrametoolStripMenuItem->Checked == true)
-												 sw->WriteLine("0 0 0 0 0 0 0"); //1.570796 3.141592
-										 }
-										 else if (i != 0)
-										 {
-											 if (refFrametoolStripMenuItem->Checked == true)
-											 {
-												 sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
-												 sw->WriteLine(structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us));
-											 }
-											 else
-											 {
-												 auto temp = i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ";
-												 temp += structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us);
-												 if (name_clr == "RLegRoot")
-													 RLegRoot = temp;
-												 else if (name_clr == "LLegRoot")
-													 LLegRoot = temp;
-												 else if (name_clr == "LArmRoot")
-													 LArmRoot = temp;
-												 else if (name_clr == "RArmRoot")
-													 RArmRoot = temp;
-											 }
-										 }
-									 }
-
-									 // Actual animation.
-									 for (ushort time = 0; time < duration; time++)
-									 {
-										 auto ref_frame = 0;
-										 if (refFrametoolStripMenuItem->Checked == true)
-											 ref_frame = 1;
-
-										 sw->WriteLine("time " + (time + ref_frame));
-										 m_D3DWrap->update_ema(structure, names, animation_name, time);
-										 for (auto i = 0; i < skeleton_data->nodes_count; i++)
-										 {
-											 auto name_clr = gcnew String(names[i].c_str());
-
-											 if (!name_clr->Equals("camera") && i == 0 && time == 0)
-												 sw->WriteLine("0 0 0 0 0 0 0"); //1.570796 3.141592
-											 else if (name_clr->Equals("camera") || i != 0)
-											 {
-												 if (time != 0 && (name_clr == "RLegRoot" || name_clr == "LLegRoot" || name_clr == "LArmRoot" || name_clr == "RArmRoot"))
-												 { /*Empty*/}
-												 else
-												 {
-													 if (name_clr == "RLegRoot" && refFrametoolStripMenuItem->Checked != true)
-														 sw->WriteLine(RLegRoot);
-													 else if (name_clr == "LLegRoot" && refFrametoolStripMenuItem->Checked != true)
-														 sw->WriteLine(LLegRoot);
-													 else if (name_clr == "LArmRoot" && refFrametoolStripMenuItem->Checked != true)
-														 sw->WriteLine(LArmRoot);
-													 else if (name_clr == "RArmRoot" && refFrametoolStripMenuItem->Checked != true)
-														 sw->WriteLine(RArmRoot);
-													 else
-													 {
-														 sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
-														 sw->WriteLine(structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us));
-													 }
-												 }
-											 }
-										 }
-									 }
-
-									 delete skeleton_data;
-									 delete ema_data;
-									 sw->WriteLine("end");
-									 sw->Close();
+									 SetStatus("Animations: " + (++index) + " out of " + checked_count);
 								 }
 							 }
 						 }
 					 }
 
-					 MessageBox::Show("Animations extracted", "Done", MessageBoxButtons::OK);
+					 SetStatus("Animations extracted");
+					 toolStripStatusLabel1->Tag = String::Empty;
+					 System::Media::SystemSounds::Beep->Play();
 				 }
 			 }
+
+			 SetStatus("Done");
+			 toolStripStatusLabel1->Tag = String::Empty;
 
 			 treeView1->Enabled = true;
 		}
@@ -1645,8 +1327,8 @@ namespace usf4_ce {
 								 // pin outer array<ushort*>^
 								 const pin_ptr<ushort*> pin = &arrays[0];
 
-								 m_D3DWrap->load_emg(i, emg_data[i]->submodel_count, npDDSid, npIndexCount,
-									 emg_data[i]->vertex_count, emg_data[i]->vertex_size, pin, npVertexArray);
+								 m_D3DWrap->load_emg(i, emg_data[i]->header->submodel_count, npDDSid, npIndexCount,
+									 emg_data[i]->header->vertex_count, emg_data[i]->header->vertex_size, emg_data[i]->header->trianlge_strip, pin, npVertexArray);
 							 }
 							 catch (...)
 							 {
@@ -1696,7 +1378,7 @@ namespace usf4_ce {
 					 m_D3DWrap->create_buffers(buffer_count); // Creating array of buffers.
 
 					 // Filling arrays simmilar to checks.
-					 auto sendcount = 0;
+					 auto send_count = 0;
 					 for (byte i = 0; i < emg_count; i++)
 					 {
 						 emg_offsets[i] = br->ReadInt32(); // Filling array with list.
@@ -1730,8 +1412,8 @@ namespace usf4_ce {
 								 // pin outer array<ushort*>^
 								 const pin_ptr<ushort*> pin = &arrays[0];
 
-								 m_D3DWrap->load_emg(sendcount, emg_data[i]->submodel_count, npDDSid, npIndexCount,
-									 emg_data[i]->vertex_count, emg_data[i]->vertex_size, pin, npVertexArray);
+								 m_D3DWrap->load_emg(send_count, emg_data[i]->header->submodel_count, npDDSid, npIndexCount,
+									 emg_data[i]->header->vertex_count, emg_data[i]->header->vertex_size, emg_data[i]->header->trianlge_strip, pin, npVertexArray);
 							 }
 							 catch (...)
 							 {
@@ -1740,7 +1422,7 @@ namespace usf4_ce {
 									 pin.Free();
 							 }
 
-							 sendcount++;
+							 send_count++;
 							 delete emg_data[i];
 						 }
 					 }
@@ -1806,10 +1488,23 @@ namespace usf4_ce {
 		}
 
 		System::Void steamToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e) {
-			 if (steamToolStripMenuItem->Checked)
-				 steamToolStripMenuItem->Checked = false;
+			 if (homeToolStripMenuItem->Checked)
+			 {
+				 homeToolStripMenuItem->Checked = false;
+				 home_path = String::Empty;
+			 }
 			 else
-				 steamToolStripMenuItem->Checked = true;
+			 {
+				 this->toolStripDropDownButton3->DropDown->Close();
+
+				 auto openFileDialog1 = gcnew Ookii::Dialogs::VistaFolderBrowserDialog();
+
+				 if (openFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK)
+				 {
+					 homeToolStripMenuItem->Checked = true;
+					 home_path = openFileDialog1->SelectedPath;
+				 }
+			 }
 		}
 		System::Void originStoreToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e) {
 			 if (originStoreToolStripMenuItem->Checked)
@@ -1878,9 +1573,9 @@ namespace usf4_ce {
 			saveEMA_contextMenuStrip->Close();
 
 			auto openFileDialog1 = gcnew OpenFileDialog();
-			if (steamToolStripMenuItem->Checked && steam_path != String::Empty)
+			if (homeToolStripMenuItem->Checked && home_path != String::Empty)
 			{
-				openFileDialog1->InitialDirectory = steam_path;
+				openFileDialog1->InitialDirectory = home_path;
 			}
 			openFileDialog1->RestoreDirectory = true;
 			openFileDialog1->FileName = "";
@@ -1889,13 +1584,15 @@ namespace usf4_ce {
 
 			if (openFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK)
 			{
+				SetStatus("Adding...");
+
 				if (backupOriginalFileToolStripMenuItem->Checked)
 				{
 					auto string_array = _currentNode->Tag->ToString()->Split('\\');
 					const auto path = Path::GetDirectoryName(_currentNode->Tag->ToString());
 					System::DateTime^ now = System::DateTime::Now;
 					String^ backup_path = {};
-					backup_path += (path + "\\Backup\\" + now->Day + "." + now->Month + "-" + now->Hour + "." + now->Minute + "." + now->Second + "_" + string_array[string_array->Length - 1]);
+					backup_path += (path + "\\Backup\\" + now->Day + "-" + now->Month + "_" + now->Hour + "-" + now->Minute + "-" + now->Second + "_" + string_array[string_array->Length - 1]);
 
 					Directory::CreateDirectory(path + "\\Backup\\");
 					File::Copy(_currentNode->Tag->ToString(), backup_path, true);
@@ -1980,7 +1677,11 @@ namespace usf4_ce {
 				ema_data->animation[last_index]->values = import_anim->values;
 
 				if (write_ema(ema_data, skeleton_data, _currentNode->Tag->ToString()))
-					MessageBox::Show("EMA file saved", "Done", MessageBoxButtons::OK);
+				{
+					SetStatus("Added successfully");
+					toolStripStatusLabel1->Tag = String::Empty;
+					System::Media::SystemSounds::Beep->Play();
+				}
 				else
 					MessageBox::Show("Failed to create file.", "Fail", MessageBoxButtons::OK);
 
@@ -2009,7 +1710,7 @@ namespace usf4_ce {
 			auto string_array = _currentNode->Tag->ToString()->Split('\\');
 			const auto path = Path::GetDirectoryName(_currentNode->Tag->ToString());
 			String^ backup_path = {};
-			backup_path += (path + "\\Backup\\" + now->Day + "." + now->Month + "-" + now->Hour + "." + now->Minute + "." + now->Second + "_" + string_array[string_array->Length - 1]);
+			backup_path += (path + "\\Backup\\" + now->Day + "-" + now->Month + "_" + now->Hour + "-" + now->Minute + "-" + now->Second + "_" + string_array[string_array->Length - 1]);
 
 			if (backupOriginalFileToolStripMenuItem->Checked)
 			{
@@ -2022,7 +1723,11 @@ namespace usf4_ce {
 			const auto skeleton_data = read_ema_skeleton(_currentNode->Tag->ToString());
 
 			if (write_ema(ema_data, skeleton_data, _currentNode->Tag->ToString()))
-				MessageBox::Show("Animation file saved", "Done", MessageBoxButtons::OK);
+			{
+				SetStatus("Animation file saved");
+				toolStripStatusLabel1->Tag = String::Empty;
+				System::Media::SystemSounds::Beep->Play();
+			}
 			else
 				MessageBox::Show("Failed to create file.", "Fail", MessageBoxButtons::OK);
 
@@ -2055,11 +1760,13 @@ namespace usf4_ce {
 
 			if (saveFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK)
 			{
+				SetStatus("Saving...");
+
 				if (backupOriginalFileToolStripMenuItem->Checked)
 				{
 					System::DateTime^ now = System::DateTime::Now;
 					String^ backup_path = {};
-					backup_path += (path + "\\Backup\\" + now->Day + "." + now->Month + "-" + now->Hour + "." + now->Minute + "." + now->Second + "_" + string_array[string_array->Length - 1]);
+					backup_path += (path + "\\Backup\\" + now->Day + "-" + now->Month + "_" + now->Hour + "-" + now->Minute + "-" + now->Second + "_" + string_array[string_array->Length - 1]);
 
 					Directory::CreateDirectory(path + "\\Backup\\");
 					File::Copy(_currentNode->Tag->ToString(), backup_path, true);
@@ -2070,7 +1777,11 @@ namespace usf4_ce {
 				const auto skeleton_data = read_ema_skeleton(_currentNode->Tag->ToString());
 
 				if (write_ema(ema_data, skeleton_data, saveFileDialog1->FileName))
-					MessageBox::Show("EMA file saved", "Done", MessageBoxButtons::OK);
+				{
+					SetStatus("EMA file saved");
+					toolStripStatusLabel1->Tag = String::Empty;
+					System::Media::SystemSounds::Beep->Play();
+				}
 				else
 					MessageBox::Show("Failed to create file.", "Fail", MessageBoxButtons::OK);
 
@@ -2111,13 +1822,15 @@ namespace usf4_ce {
 
 			if (saveFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK)
 			{
+				SetStatus("Exporting...");
+
 				if (backupEMAToolStripMenuItem->Checked)
 				{
 					auto string_array = _currentNode->Parent->Tag->ToString()->Split('\\');
 					const auto path = Path::GetDirectoryName(_currentNode->Parent->Tag->ToString());
 					System::DateTime^ now = System::DateTime::Now;
 					String^ backup_path = {};
-					backup_path += (path + "\\Backup\\" + now->Day + "." + now->Month + "-" + now->Hour + "." + now->Minute + "." + now->Second + "_" + string_array[string_array->Length - 1]);
+					backup_path += (path + "\\Backup\\" + now->Day + "-" + now->Month + "_" + now->Hour + "-" + now->Minute + "-" + now->Second + "_" + string_array[string_array->Length - 1]);
 
 					Directory::CreateDirectory(path + "\\Backup\\");
 					File::Copy(_currentNode->Parent->Tag->ToString(), backup_path, true);
@@ -2139,9 +1852,12 @@ namespace usf4_ce {
 				export_anim->node = ema_data->animation[index]->node;
 				export_anim->values = ema_data->animation[index]->values;
 
-				for(auto i = 0; i < export_anim->node->Length; i ++)
+				if(skeleton_data != nullptr)
 				{
-					export_anim->node[i]->name = skeleton_data->names[export_anim->node[i]->index];
+					for (auto i = 0; i < export_anim->node->Length; i++)
+					{
+						export_anim->node[i]->name = skeleton_data->names[export_anim->node[i]->index];
+					}
 				}
 
 				auto formatter = gcnew Runtime::Serialization::Formatters::Binary::BinaryFormatter();
@@ -2153,7 +1869,9 @@ namespace usf4_ce {
 				bw->Close();
 				fs->Close();
 
-				MessageBox::Show("Animation data saved.", "Done", MessageBoxButtons::OK);
+				SetStatus("Exported successfully");
+				toolStripStatusLabel1->Tag = String::Empty;
+				System::Media::SystemSounds::Beep->Play();
 			}
 		}
 		
@@ -2161,9 +1879,9 @@ namespace usf4_ce {
 			animationContextMenuStrip1->Close();
 
 			auto openFileDialog1 = gcnew OpenFileDialog();
-			if (steamToolStripMenuItem->Checked && steam_path != String::Empty)
+			if (homeToolStripMenuItem->Checked && home_path != String::Empty)
 			{
-				openFileDialog1->InitialDirectory = steam_path;
+				openFileDialog1->InitialDirectory = home_path;
 			}
 			openFileDialog1->RestoreDirectory = true;
 			openFileDialog1->FileName = "";
@@ -2172,13 +1890,15 @@ namespace usf4_ce {
 
 			if (openFileDialog1->ShowDialog() == System::Windows::Forms::DialogResult::OK)
 			{
+				SetStatus("Replacing...");
+
 				if (backupEMAToolStripMenuItem->Checked)
 				{
 					auto string_array = _currentNode->Parent->Tag->ToString()->Split('\\');
 					const auto path = Path::GetDirectoryName(_currentNode->Parent->Tag->ToString());
 					System::DateTime^ now = System::DateTime::Now;
 					String^ backup_path = {};
-					backup_path += (path + "\\Backup\\" + now->Day + "." + now->Month + "-" + now->Hour + "." + now->Minute + "." + now->Second + "_" + string_array[string_array->Length - 1]);
+					backup_path += (path + "\\Backup\\" + now->Day + "-" + now->Month + "_" + now->Hour + "-" + now->Minute + "-" + now->Second + "_" + string_array[string_array->Length - 1]);
 
 					Directory::CreateDirectory(path + "\\Backup\\");
 					File::Copy(_currentNode->Parent->Tag->ToString(), backup_path, true);
@@ -2220,17 +1940,20 @@ namespace usf4_ce {
 
 				auto index = _currentNode->Index;
 
-				// Replacing node indexes with a correct one from skeleton
-				for (auto i = 0; i < import_anim->node->Length; i++)
+				if(skeleton_data != nullptr)
 				{
-					auto node_index = 0;
-					for(auto a = 0; a < skeleton_data->names->Length; a++)
+					// Replacing node indexes with a correct one from skeleton
+					for (auto i = 0; i < import_anim->node->Length; i++)
 					{
-						if (skeleton_data->names[a] == import_anim->node[i]->name)
-							node_index = a;
-					}
+						auto node_index = 0;
+						for (auto a = 0; a < skeleton_data->names->Length; a++)
+						{
+							if (skeleton_data->names[a] == import_anim->node[i]->name)
+								node_index = a;
+						}
 
-					import_anim->node[i]->index = node_index;
+						import_anim->node[i]->index = node_index;
+					}
 				}
 
 				//ema_data->animation[index]->name = import_anim->name;
@@ -2241,7 +1964,11 @@ namespace usf4_ce {
 				ema_data->animation[index]->values = import_anim->values;
 
 				if (write_ema(ema_data, skeleton_data, _currentNode->Parent->Tag->ToString()))
-					MessageBox::Show("EMA file saved", "Done", MessageBoxButtons::OK);
+				{
+					SetStatus("Replaced successfully");
+					toolStripStatusLabel1->Tag = String::Empty;
+					System::Media::SystemSounds::Beep->Play();
+				}
 				else
 					MessageBox::Show("Failed to create file.", "Fail", MessageBoxButtons::OK);
 
@@ -2260,13 +1987,15 @@ namespace usf4_ce {
 		System::Void deleteToolStripMenuItem_Click(System::Object^ sender, System::EventArgs^ e) {
 			animationContextMenuStrip1->Close();
 
+			SetStatus("Deleting...");
+
 			if (backupEMAToolStripMenuItem->Checked)
 			{
 				auto string_array = _currentNode->Parent->Tag->ToString()->Split('\\');
 				const auto path = Path::GetDirectoryName(_currentNode->Parent->Tag->ToString());
 				System::DateTime^ now = System::DateTime::Now;
 				String^ backup_path = {};
-				backup_path += (path + "\\Backup\\" + now->Day + "." + now->Month + "-" + now->Hour + "." + now->Minute + "." + now->Second + "_" + string_array[string_array->Length - 1]);
+				backup_path += (path + "\\Backup\\" + now->Day + "-" + now->Month + "_" + now->Hour + "-" + now->Minute + "-" + now->Second + "_" + string_array[string_array->Length - 1]);
 
 				Directory::CreateDirectory(path + "\\Backup\\");
 				File::Copy(_currentNode->Parent->Tag->ToString(), backup_path, true);
@@ -2293,7 +2022,11 @@ namespace usf4_ce {
 			ema_data->animation = animation_array;
 
 			if (write_ema(ema_data, skeleton_data, _currentNode->Parent->Tag->ToString()))
-				MessageBox::Show("EMA file saved", "Done", MessageBoxButtons::OK);
+			{
+				SetStatus("Deleted successfully");
+				toolStripStatusLabel1->Tag = String::Empty;
+				System::Media::SystemSounds::Beep->Play();
+			}
 			else
 				MessageBox::Show("Failed to create file.", "Fail", MessageBoxButtons::OK);
 
@@ -2310,7 +2043,7 @@ namespace usf4_ce {
 				}
 			}
 		}
-		
+
 		System::Void animationContextMenuStrip1_Closing(System::Object^ sender, System::Windows::Forms::ToolStripDropDownClosingEventArgs^ e) {
 			if (e->CloseReason == ToolStripDropDownCloseReason::ItemClicked)
 				e->Cancel = true;

@@ -6,6 +6,8 @@ namespace usf4_ce {
 	using namespace System;
 	using namespace IO;
 
+	inline void write_skeleton_data(ema_struct^ ema_data, full_ema_skeleton_struct^ ema_skeleton, FileStream^ fs, BinaryWriter^ w);
+
 	inline bool write_ema(ema_struct^ input_ema, full_ema_skeleton_struct^ ema_skeleton, String^ output_file)
 	{
 		auto ema_data = gcnew ema_struct();
@@ -244,6 +246,54 @@ namespace usf4_ce {
 
 		//==============================================================================
 
+		write_skeleton_data(ema_data, ema_skeleton, fs, w);
+
+		//==============================================================================
+
+		// Anim names
+		const auto empty_buffer = gcnew array<Byte>(10);
+		w->Write(empty_buffer);
+		for (auto i = 0; i < ema_data->animation->Length; i++)
+		{
+			const auto name_offset = fs->Position - 10 - ema_data->animation_offsets[i];
+
+			auto buffer = gcnew array<Byte>(ema_data->animation[i]->name->Length + 2);
+			for(auto a = 0; a <= ema_data->animation[i]->name->Length; a++)
+			{
+				if (a == 0)
+					buffer[a] = byte(ema_data->animation[i]->name->Length);
+				else
+					buffer[a] = byte(ema_data->animation[i]->name[a-1]);
+			}
+			w->Write(buffer);
+
+			// Updating name offsets
+			fs->Position = anim_name_offsets_temp[i];
+			w->Write(UINT32(name_offset));
+			fs->Position = fs->Length;
+		}
+
+		// update ema header
+		fs->Position = 0;
+		w->Write(ema_data->header->id);
+		w->Write(ema_data->header->header_size);
+		w->Write(ema_data->header->unknown1);
+		w->Write(ema_data->header->skeleton_offset);
+		fs->Position = fs->Length;
+
+		w->Close();
+		fs->Close();
+
+		delete ema_data;
+
+		return true;
+	}
+
+	inline void write_skeleton_data(ema_struct^ ema_data, full_ema_skeleton_struct^ ema_skeleton, FileStream^ fs, BinaryWriter^ w)
+	{
+		if(ema_skeleton == nullptr)
+			return;
+
 		// Anim skeleton, temp header
 		ema_data->header->skeleton_offset = UINT32(fs->Position);
 		w->Write(ema_skeleton->header.nodeCount);
@@ -303,7 +353,7 @@ namespace usf4_ce {
 			ema_skeleton->names_offsets[i] = UINT32(fs->Position) - ema_data->header->skeleton_offset;
 
 			auto buffer = gcnew array<byte>(ema_skeleton->names[i]->Length + 1);
-			for(auto a = 0; a < ema_skeleton->names[i]->Length; a++)
+			for (auto a = 0; a < ema_skeleton->names[i]->Length; a++)
 			{
 				buffer[a] = byte(ema_skeleton->names[i][a]);
 			}
@@ -327,7 +377,7 @@ namespace usf4_ce {
 			w->Write(UINT16(ema_skeleton->ik_data[i]->method));
 			w->Write(UINT16(ema_skeleton->ik_data[i]->data_size));
 
-			for(auto a = 0; a < ema_skeleton->ik_data[i]->data->Length; a++)
+			for (auto a = 0; a < ema_skeleton->ik_data[i]->data->Length; a++)
 			{
 				w->Write(ema_skeleton->ik_data[i]->data[a]);
 			}
@@ -381,45 +431,5 @@ namespace usf4_ce {
 		w->Write(ema_skeleton->header.matrixOffset);
 		w->Write(ema_skeleton->header.ikDataOffset);
 		fs->Position = fs->Length;
-
-		//==============================================================================
-
-		// Anim names
-		const auto empty_buffer = gcnew array<Byte>(10);
-		w->Write(empty_buffer);
-		for (auto i = 0; i < ema_data->animation->Length; i++)
-		{
-			const auto name_offset = fs->Position - 10 - ema_data->animation_offsets[i];
-
-			auto buffer = gcnew array<Byte>(ema_data->animation[i]->name->Length + 2);
-			for(auto a = 0; a <= ema_data->animation[i]->name->Length; a++)
-			{
-				if (a == 0)
-					buffer[a] = byte(ema_data->animation[i]->name->Length);
-				else
-					buffer[a] = byte(ema_data->animation[i]->name[a-1]);
-			}
-			w->Write(buffer);
-
-			// Updating name offsets
-			fs->Position = anim_name_offsets_temp[i];
-			w->Write(UINT32(name_offset));
-			fs->Position = fs->Length;
-		}
-
-		// update ema header
-		fs->Position = 0;
-		w->Write(ema_data->header->id);
-		w->Write(ema_data->header->header_size);
-		w->Write(ema_data->header->unknown1);
-		w->Write(ema_data->header->skeleton_offset);
-		fs->Position = fs->Length;
-
-		w->Close();
-		fs->Close();
-
-		delete ema_data;
-
-		return true;
 	}
 }

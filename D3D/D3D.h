@@ -47,6 +47,7 @@ public:
 	unsigned short**index_count = nullptr;
 	unsigned short* vertex_count = nullptr;
 	unsigned short* vertex_size = nullptr;
+	unsigned short* triangle_strip = nullptr;
 
 	ushort	dds_count{};
 	byte**	dds_id = nullptr;
@@ -54,7 +55,7 @@ public:
 	HRESULT init(HWND hwnd, int width, int height);
 	HRESULT create_buffers(ushort emg_amount);
 	HRESULT load_emg(ushort current_emg, ushort emg_submodels, const byte* dds_id, const ushort* index_amount,
-					ushort vertex_amount, ushort vertex_size, ushort** indices_array, byte* vertex_array) const;
+					ushort vertex_amount, ushort vertex_size, ushort triangle_strip, ushort** indices_array, byte* vertex_array) const;
 	HRESULT load_dds(ushort dds_amount, unsigned long* dds_size, byte** dds_content);
 	HRESULT shutdown() const;
 	static HRESULT reset();

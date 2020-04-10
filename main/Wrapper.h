@@ -19,7 +19,7 @@ public:
 	HRESULT	on_mouse_button_down(short x, short y);
 	HRESULT create_buffers(ushort emg_count);
 	HRESULT	load_emg(ushort current_emg, ushort emg_submodels, unsigned char* dds_id, ushort* index_amount,
-					ushort vertex_amount, ushort vertex_size, ushort** indices_array, unsigned char* vertex_array);
+					ushort vertex_amount, ushort vertex_size, ushort triangle_strip, ushort** indices_array, unsigned char* vertex_array);
 	HRESULT load_dds(ushort dds_count, unsigned long* dds_size, unsigned char** dds_content);
 	HRESULT setup_ema(System::String^ ema_file_name, unsigned long ema_block_offset);
 	HRESULT update_ema(float(&structure)[500][6], std::string(&names)[500], System::String^ animation_name, int frame);
@@ -89,9 +89,9 @@ inline HRESULT wrapper::create_buffers(const ushort emg_count)
 	return m_pRenderer->create_buffers(emg_count);
 }
 
-inline HRESULT wrapper::load_emg(const ushort current_emg, const ushort emg_submodels, unsigned char* dds_id, ushort* index_amount, const ushort vertex_amount, const ushort vertex_size, ushort** indices_array, unsigned char* vertex_array)
+inline HRESULT wrapper::load_emg(const ushort current_emg, const ushort emg_submodels, unsigned char* dds_id, ushort* index_amount, const ushort vertex_amount, const ushort vertex_size, const ushort triangle_strip, ushort** indices_array, unsigned char* vertex_array)
 {
-	return m_pRenderer->load_emg(current_emg, emg_submodels, dds_id, index_amount, vertex_amount, vertex_size, indices_array, vertex_array);
+	return m_pRenderer->load_emg(current_emg, emg_submodels, dds_id, index_amount, vertex_amount, vertex_size, triangle_strip, indices_array, vertex_array);
 }
 
 inline HRESULT wrapper::load_dds(ushort dds_count, unsigned long* dds_size, unsigned char** dds_content)

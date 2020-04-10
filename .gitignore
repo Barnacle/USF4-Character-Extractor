@@ -1,3 +1,5 @@
+*.cfg
+*.aps
 Debug/
 Release/
 D3D/Debug/

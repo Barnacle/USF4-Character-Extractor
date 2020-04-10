@@ -86,6 +86,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <Reference Include="Ookii.Dialogs">
+      <HintPath>..\References\Ookii.Dialogs.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -104,6 +107,7 @@
     </ClInclude>
     <ClInclude Include="Reader.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="SMD.h" />
     <ClInclude Include="Wrapper.h" />
     <ClInclude Include="Writer.h" />
   </ItemGroup>

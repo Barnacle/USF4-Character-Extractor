@@ -66,6 +66,7 @@ HRESULT CD3DRender::create_buffers(const ushort emg_amount)
 	index_count = new ushort*[emg_amount];
 	vertex_count = new ushort[emg_amount];
 	vertex_size = new ushort[emg_amount];
+	triangle_strip = new ushort[emg_amount];
 
 	dds_id = new byte*[emg_amount];
 
@@ -74,12 +75,13 @@ HRESULT CD3DRender::create_buffers(const ushort emg_amount)
 
 // Filling arrays.
 HRESULT CD3DRender::load_emg(const ushort current_emg, const ushort emg_submodels, const byte* dds_id, const ushort* index_amount,
-                             const ushort vertex_amount, const ushort vertex_size, ushort** indices_array, byte* vertex_array) const
+                             const ushort vertex_amount, const ushort vertex_size, const ushort triangle_strip, ushort** indices_array, byte* vertex_array) const
 {
 	// Filling arrays for using in ProcessFrame().
 	CD3DRender::index_count[current_emg] = new ushort[emg_submodels];
 	CD3DRender::vertex_count[current_emg] = vertex_amount;
 	CD3DRender::vertex_size[current_emg] = vertex_size;
+	CD3DRender::triangle_strip[current_emg] = triangle_strip;
 	CD3DRender::emg_submodels[current_emg] = emg_submodels;
 
 	CD3DRender::dds_id[current_emg] = new byte[emg_submodels];
@@ -249,7 +251,8 @@ HRESULT CD3DRender::process_frame() const
 					}
 
 					g_d3dDevice->SetIndices(g_pIndexBuffer[i][a]);
-					g_d3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLESTRIP, 0, 0, vertex_count[i], 0, index_count[i][a] - 2);		
+					const auto primitive_count = triangle_strip[i] ? index_count[i][a] - 2 : index_count[i][a] / 3;
+					g_d3dDevice->DrawIndexedPrimitive(triangle_strip[i] ? D3DPT_TRIANGLESTRIP : D3DPT_TRIANGLELIST, 0, 0, vertex_count[i], 0, primitive_count);
 				}
 			}
 		}
