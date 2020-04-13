@@ -49,11 +49,12 @@ namespace usf4_ce {
 
 		System::Windows::Forms::ToolStripMenuItem^  originStoreToolStripMenuItem;
 		System::Windows::Forms::ToolStripMenuItem^  MergeSubmodelsToolStripMenuItem;
-	private: System::Windows::Forms::ToolStripTextBox^ scaleToolStripTextBox1;
+		System::Windows::Forms::ToolStripTextBox^ scaleToolStripTextBox1;
 
 		System::Windows::Forms::ToolStripMenuItem^  replaceSkelToolStripMenuItem;
 		System::Windows::Forms::ToolStripMenuItem^  starPoseFixToolStripMenuItem;
 		System::Windows::Forms::ToolStripMenuItem^ refFrametoolStripMenuItem;
+		System::Windows::Forms::ToolStripMenuItem^ smallSMDToolStripMenuItem;
 
 		System::Windows::Forms::SplitContainer^  BaseSplitContainer;
 		System::Windows::Forms::SplitContainer^  TopSplitContainer;
@@ -163,6 +164,7 @@ namespace usf4_ce {
 			this->replaceDataToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->backupEMAToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->deleteToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
+			this->smallSMDToolStripMenuItem = (gcnew System::Windows::Forms::ToolStripMenuItem());
 			this->saveEMA_contextMenuStrip->SuspendLayout();
 			this->statusStrip1->SuspendLayout();
 			this->toolStrip1->SuspendLayout();
@@ -283,10 +285,10 @@ namespace usf4_ce {
 			// 
 			this->toolStripDropDownButton3->AutoToolTip = false;
 			this->toolStripDropDownButton3->DisplayStyle = System::Windows::Forms::ToolStripItemDisplayStyle::Text;
-			this->toolStripDropDownButton3->DropDownItems->AddRange(gcnew cli::array< System::Windows::Forms::ToolStripItem^  >(7) {
+			this->toolStripDropDownButton3->DropDownItems->AddRange(gcnew cli::array< System::Windows::Forms::ToolStripItem^  >(8) {
 				this->homeToolStripMenuItem,
 					this->originStoreToolStripMenuItem, this->MergeSubmodelsToolStripMenuItem, this->scaleToolStripTextBox1, this->replaceSkelToolStripMenuItem,
-					this->starPoseFixToolStripMenuItem, this->refFrametoolStripMenuItem
+					this->starPoseFixToolStripMenuItem, this->refFrametoolStripMenuItem, this->smallSMDToolStripMenuItem
 			});
 			this->toolStripDropDownButton3->Name = L"toolStripDropDownButton3";
 			this->toolStripDropDownButton3->ShowDropDownArrow = false;
@@ -511,6 +513,14 @@ namespace usf4_ce {
 			this->deleteToolStripMenuItem->Text = L"Delete";
 			this->deleteToolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::deleteToolStripMenuItem_Click);
 			// 
+			// smallSMDToolStripMenuItem
+			// 
+			this->smallSMDToolStripMenuItem->Name = L"smallSMDToolStripMenuItem";
+			this->smallSMDToolStripMenuItem->Size = System::Drawing::Size(180, 22);
+			this->smallSMDToolStripMenuItem->Text = L"Small Anim. SMD";
+			this->smallSMDToolStripMenuItem->ToolTipText = L"Skip static nodes";
+			this->smallSMDToolStripMenuItem->Click += gcnew System::EventHandler(this, &MainForm::smallSMDToolStripMenuItem_Click);
+			// 
 			// MainForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
@@ -600,6 +610,10 @@ namespace usf4_ce {
 					{
 						refFrametoolStripMenuItem->Checked = true;
 					}
+					else if (d[i]->Name == "small_smd" && d[i]->InnerText != smallSMDToolStripMenuItem->Checked.ToString())
+					{
+						smallSMDToolStripMenuItem->Checked = true;
+					}
 					else if (d[i]->Name == "backup1" && d[i]->InnerText != backupOriginalFileToolStripMenuItem->Checked.ToString())
 					{
 						backupOriginalFileToolStripMenuItem->Checked = false;
@@ -673,37 +687,41 @@ namespace usf4_ce {
 			setting6->AppendChild(config->CreateTextNode(refFrametoolStripMenuItem->Checked.ToString()));
 			root_elem->AppendChild(setting6);
 
-			auto setting7 = config->CreateElement(String::Empty, "backup1", String::Empty);
-			setting7->AppendChild(config->CreateTextNode(backupOriginalFileToolStripMenuItem->Checked.ToString()));
+			auto setting7 = config->CreateElement(String::Empty, "small_smd", String::Empty);
+			setting7->AppendChild(config->CreateTextNode(smallSMDToolStripMenuItem->Checked.ToString()));
 			root_elem->AppendChild(setting7);
 
-			auto setting8 = config->CreateElement(String::Empty, "backup2", String::Empty);
-			setting8->AppendChild(config->CreateTextNode(backupEMAToolStripMenuItem->Checked.ToString()));
+			auto setting8 = config->CreateElement(String::Empty, "backup1", String::Empty);
+			setting8->AppendChild(config->CreateTextNode(backupOriginalFileToolStripMenuItem->Checked.ToString()));
 			root_elem->AppendChild(setting8);
 
-			auto setting9 = config->CreateElement(String::Empty, "win_state", String::Empty);
-			setting9->AppendChild(config->CreateTextNode(WindowState.ToString()));
+			auto setting9 = config->CreateElement(String::Empty, "backup2", String::Empty);
+			setting9->AppendChild(config->CreateTextNode(backupEMAToolStripMenuItem->Checked.ToString()));
 			root_elem->AppendChild(setting9);
 
-			auto setting10 = config->CreateElement(String::Empty, "pos_top", String::Empty);
-			setting10->AppendChild(config->CreateTextNode(Top.ToString()));
+			auto setting10 = config->CreateElement(String::Empty, "win_state", String::Empty);
+			setting10->AppendChild(config->CreateTextNode(WindowState.ToString()));
 			root_elem->AppendChild(setting10);
 
-			auto setting11 = config->CreateElement(String::Empty, "pos_left", String::Empty);
-			setting11->AppendChild(config->CreateTextNode(Left.ToString()));
+			auto setting11 = config->CreateElement(String::Empty, "pos_top", String::Empty);
+			setting11->AppendChild(config->CreateTextNode(Top.ToString()));
 			root_elem->AppendChild(setting11);
 
-			auto setting12 = config->CreateElement(String::Empty, "pos_height", String::Empty);
-			setting12->AppendChild(config->CreateTextNode(Height.ToString()));
+			auto setting12 = config->CreateElement(String::Empty, "pos_left", String::Empty);
+			setting12->AppendChild(config->CreateTextNode(Left.ToString()));
 			root_elem->AppendChild(setting12);
 
-			auto setting13 = config->CreateElement(String::Empty, "pos_width", String::Empty);
-			setting13->AppendChild(config->CreateTextNode(Width.ToString()));
+			auto setting13 = config->CreateElement(String::Empty, "pos_height", String::Empty);
+			setting13->AppendChild(config->CreateTextNode(Height.ToString()));
 			root_elem->AppendChild(setting13);
 
-			auto setting14 = config->CreateElement(String::Empty, "pos_toolspitter", String::Empty);
-			setting14->AppendChild(config->CreateTextNode(TopSplitContainer->SplitterDistance.ToString()));
+			auto setting14 = config->CreateElement(String::Empty, "pos_width", String::Empty);
+			setting14->AppendChild(config->CreateTextNode(Width.ToString()));
 			root_elem->AppendChild(setting14);
+
+			auto setting15 = config->CreateElement(String::Empty, "pos_toolspitter", String::Empty);
+			setting15->AppendChild(config->CreateTextNode(TopSplitContainer->SplitterDistance.ToString()));
+			root_elem->AppendChild(setting15);
 
 			config->Save(Directory::GetCurrentDirectory() + "\\config.cfg");
 		}
@@ -859,14 +877,19 @@ namespace usf4_ce {
 					array<Char>^ trim_chars = { 'o', 'b', 'e', 'm', 'j', '.' };
 					const auto path = Path::GetDirectoryName(openFileDialog1->FileName);
 					auto name = Path::GetFileName(openFileDialog1->FileName)->TrimEnd(trim_chars);
+
+					String^ col = {};
+
+					if (File::Exists(path + "\\" + name + "_01.col.emb"))
+						col = "sf4";
+					else if(File::Exists(path + "\\" + name + ".obj.emb"))
+						col = "sfxt";
 					
-					if (!File::Exists(path + "\\" + name + "_01.col.emb"))
-					{						
-						//m_D3DWrap->WrapLoadDDS(0, 0, 0);
-					}						
-					else
+
+					if(col != nullptr)
 					{
-						fs = File::OpenRead(path + "\\" + name + "_01.col.emb");
+						String^ str = col == "sf4" ? "_01.col.emb" : ".obj.emb";
+						fs = File::OpenRead(path + "\\" + name + str);
 						auto br2 = gcnew BinaryReader(fs);
 
 						if (String::Compare(Encoding::UTF8->GetString(br2->ReadBytes(4)), "#EMB", true) == 0) // If 0, continue reading.
@@ -875,20 +898,27 @@ namespace usf4_ce {
 
 							for (char i = 0; i < 22; i++)
 							{
-								String^ node_name;
-								if (i < 9)
-									node_name = name + "_0" + (i + 1) + ".col.emb";
-								else
-									node_name = name + "_" + (i + 1) + ".col.emb";
+								auto node_name = name + str;
+
+								if(col == "sf4")
+								{
+									if (i < 9)
+										node_name = name + "_0" + (i + 1) + ".col.emb";
+									else
+										node_name = name + "_" + (i + 1) + ".col.emb";
+								}
 
 								if (File::Exists(path + "\\" + node_name))
 								{
 									treeView1->Nodes[1]->Nodes->Add(gcnew TreeNode(node_name));
 									treeView1->Nodes[1]->Nodes[treeView1->Nodes[1]->LastNode->Index]->Checked = true;
 								}
+
+								if (col == "sfxt")
+									break;
 							}
 
-							auto emb_data = read_emb(path + "\\" + name + "_01.col.emb");
+							auto emb_data = read_emb(path + "\\" + name + (col == "sf4" ? "_01.col.emb" : ".obj.emb"));
 
 							pin_ptr<ulong> pDDSsize = &emb_data->dds_size[0];
 							ulong* npDDSsize = pDDSsize;
@@ -920,7 +950,7 @@ namespace usf4_ce {
 
 							delete emb_data;
 							treeView1->Nodes[1]->Expand();
-						}								
+						}
 					}
 
 					// Normal map
@@ -1124,15 +1154,24 @@ namespace usf4_ce {
 						 }
 					 }					 
 
-					 // Normal map.
+					 // Normal map or SFXT texture.
 					 if (treeView1->Nodes[1]->Nodes[treeView1->Nodes[1]->LastNode->Index]->Checked)
 					 {
-						 auto emb_data = read_emb(path + "\\" + name + ".nml.emb");
+						 String^ str2 = ".nml";
+						 String^ str = str2 + ".emb";
+
+						 if (!File::Exists(path + "\\" + name + str))
+						 {
+							 str2 = ".obj";
+							 str = str2 + ".emb";
+						 }
+
+						 auto emb_data = read_emb(path + "\\" + name + str);
 
 						 for (auto i = 0; i < emb_data->dds_count; i++)
 						 {
 							 const auto output_path = Path::GetDirectoryName(saveFileDialog1->FileName);
-							 auto fs = gcnew FileStream(output_path + "\\" + name + "_" + i + ".nml.dds", FileMode::Create, FileAccess::ReadWrite);
+							 auto fs = gcnew FileStream(output_path + "\\" + name + "_" + i + str2 + ".dds", FileMode::Create, FileAccess::ReadWrite);
 							 auto bw = gcnew BinaryWriter(fs);
 
 							 for (UINT32 a = 0; a < emb_data->dds_size[i]; a++)
@@ -1162,6 +1201,15 @@ namespace usf4_ce {
 
 				 if (saveFileDialog1->ShowDialog() == Windows::Forms::DialogResult::OK)
 				 {
+					 ema_struct^ ema_data = {};
+					 full_ema_skeleton_struct^ skeleton_data = {};
+
+					 if(smallSMDToolStripMenuItem->Checked)
+					 {
+						 ema_data = read_ema(_currentNode->Parent->Tag->ToString());
+						 skeleton_data = read_ema_skeleton(_currentNode->Parent->Tag->ToString());
+					 }
+
 					 auto anim_files_enum = treeView1->Nodes[2]->Nodes->GetEnumerator();
 
 					 while (anim_files_enum->MoveNext())
@@ -1184,7 +1232,19 @@ namespace usf4_ce {
 								 const auto tree_node = safe_cast<TreeNode^>(my_enum->Current);
 								 if (tree_node->Checked) // Animation in *.*.ema file
 								 {
-									 write_anim(emo_path, file_node->Text, saveFileDialog1->FileName, tree_node->Text, tree_node->Index, m_D3DWrap,
+									 ema_animation^ raw_anim = nullptr;
+
+									 if (smallSMDToolStripMenuItem->Checked)
+									 {
+										 for (auto i = 0; i < ema_data->animation[tree_node->Index]->node->Length; i++)
+										 {
+											 ema_data->animation[tree_node->Index]->node[i]->name = skeleton_data->names[ema_data->animation[tree_node->Index]->node[i]->index];
+										 }
+
+										 raw_anim = ema_data->animation[tree_node->Index];
+									 }
+
+									 write_anim(emo_path, file_node->Text, saveFileDialog1->FileName, tree_node->Text, tree_node->Index, m_D3DWrap, raw_anim,
 										 scaleToolStripTextBox1->Text, refFrametoolStripMenuItem->Checked);
 
 									 SetStatus("Animations: " + (++index) + " out of " + checked_count);
@@ -1192,6 +1252,9 @@ namespace usf4_ce {
 							 }
 						 }
 					 }
+
+					 delete ema_data;
+					 delete skeleton_data;
 
 					 SetStatus("Animations extracted");
 					 toolStripStatusLabel1->Tag = String::Empty;
@@ -1536,6 +1599,13 @@ namespace usf4_ce {
 			else
 				refFrametoolStripMenuItem->Checked = true;
 		}
+		System::Void smallSMDToolStripMenuItem_Click(System::Object^ sender, System::EventArgs^ e) {
+			if (smallSMDToolStripMenuItem->Checked)
+				smallSMDToolStripMenuItem->Checked = false;
+			else
+				smallSMDToolStripMenuItem->Checked = true;
+		}
+
 		System::Void contextMenuStrip_Closing(System::Object^ sender, System::Windows::Forms::ToolStripDropDownClosingEventArgs^ e)
 		{
 			if (e->CloseReason == ToolStripDropDownCloseReason::ItemClicked)
@@ -1684,6 +1754,9 @@ namespace usf4_ce {
 				}
 				else
 					MessageBox::Show("Failed to create file.", "Fail", MessageBoxButtons::OK);
+
+				delete ema_data;
+				delete skeleton_data;
 
 				br->Close();
 				fs->Close();
@@ -1866,6 +1939,9 @@ namespace usf4_ce {
 
 				bw->Write(stream->ToArray());
 
+				delete ema_data;
+				delete skeleton_data;
+
 				bw->Close();
 				fs->Close();
 
@@ -1972,6 +2048,9 @@ namespace usf4_ce {
 				else
 					MessageBox::Show("Failed to create file.", "Fail", MessageBoxButtons::OK);
 
+				delete ema_data;
+				delete skeleton_data;
+
 				br->Close();
 				fs->Close();
 			}
@@ -2042,13 +2121,16 @@ namespace usf4_ce {
 					open_anim_file(path, getFileName(file, true));
 				}
 			}
+
+			delete ema_data;
+			delete skeleton_data;
 		}
 
 		System::Void animationContextMenuStrip1_Closing(System::Object^ sender, System::Windows::Forms::ToolStripDropDownClosingEventArgs^ e) {
 			if (e->CloseReason == ToolStripDropDownCloseReason::ItemClicked)
 				e->Cancel = true;
 		}
-
+		
 	};
 }
 // ReSharper restore CppRedundantParentheses

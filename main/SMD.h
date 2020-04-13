@@ -294,7 +294,7 @@ namespace usf4_ce {
 												+ (1 - (weight[0] + weight[1] + weight[2])).ToString("F6", en_us));
 									}
 								}
-							} // if (i % 2 == 0)
+							}
 						}
 						else
 						{
@@ -371,22 +371,18 @@ namespace usf4_ce {
 		fs->Close();
 	}
 
-	inline void write_anim(String^ emo_path, String^ ema_name, String^ in_output_path, String^ output_smd_file, int index, wrapper^ m_D3DWrap, String^ model_scale, bool b_ref_frame)
+	inline void write_anim(String^ emo_path, String^ ema_name, String^ in_output_path, String^ output_smd_file, int index, wrapper^ m_D3DWrap, ema_animation^ raw_anim, String^ model_scale, bool b_ref_frame)
 	{
+		const auto en_us = gcnew CultureInfo("en-US");
+		const auto scale = ushort::Parse(model_scale);
 		auto path = Path::GetDirectoryName(emo_path);
 		const auto anim_name = gcnew String(path + "\\" + ema_name);
-
-		m_D3DWrap->setup_ema(anim_name, 0);
-
 		const auto output_path = Path::GetDirectoryName(in_output_path);
-
 		Directory::CreateDirectory(output_path + "\\" + ema_name);
 
+		m_D3DWrap->setup_ema(anim_name, 0);		
+
 		auto sw = gcnew StreamWriter(output_path + "\\" + ema_name + "\\" + output_smd_file + ".smd");
-
-		const auto en_us = gcnew CultureInfo("en-US");
-
-		const auto scale = ushort::Parse(model_scale);
 
 		sw->WriteLine("version 1");
 
@@ -398,8 +394,21 @@ namespace usf4_ce {
 
 		sw->WriteLine("nodes");
 
-		for (ushort i = 0; i < skeleton_data->nodes_count; i++) // 
+		for (auto i = 0; i < skeleton_data->nodes_count; i++) // 
 		{
+			if (raw_anim != nullptr)
+			{
+				// Looking for nodes in current anim. If skel. node is not existing in anim, then skip it.
+				auto exist = false;
+				for (auto a = 0; a < raw_anim->node->Length; a++)
+				{
+					if (raw_anim->node[a]->name == skeleton_data->node_name[i])
+						exist = true;
+				}
+				if (!exist && i != 0)
+					continue;
+			}
+
 			sw->WriteLine(i + " " + "\"" + skeleton_data->node_name[i] + "\"" + " " + skeleton_data->parent_node_array[i]); //" \"root\"  child+1
 		}
 
@@ -408,6 +417,11 @@ namespace usf4_ce {
 		//==================================================================
 		// Nodes position.
 		//==================================================================
+
+		String^ RLegRootRef = {};
+		String^ LLegRootRef = {};
+		String^ LArmRootRef = {};
+		String^ RArmRootRef = {};
 
 		sw->WriteLine("skeleton");
 
@@ -418,82 +432,109 @@ namespace usf4_ce {
 		float structure[500][6];
 		std::string names[500];
 
-		auto RLegRoot = gcnew String("");
-		auto LLegRoot = gcnew String("");
-		auto LArmRoot = gcnew String("");
-		auto RArmRoot = gcnew String("");
 
-		// Reference frame.
-		m_D3DWrap->update_ema(structure, names, "ref", 0);
-
-		if (b_ref_frame)
-			sw->WriteLine("time 0");
-
+		// Should be here.
+		m_D3DWrap->update_ema(structure, names, "ref", 0); 
 		for (auto i = 0; i < skeleton_data->nodes_count; i++)
 		{
-			const auto name_clr = gcnew String(names[i].c_str());
+			auto temp = i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ";
+			temp += structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us);
 
-			if (i == 0)
+			const auto name_clr = gcnew String(names[i].c_str());
+			if (name_clr == "RLegRoot")
+				RLegRootRef = temp;
+			else if (name_clr == "LLegRoot")
+				LLegRootRef = temp;
+			else if (name_clr == "LArmRoot")
+				LArmRootRef = temp;
+			else if (name_clr == "RArmRoot")
+				RArmRootRef = temp;
+		}
+
+		// Reference frame.
+		if (b_ref_frame)
+		{
+			sw->WriteLine("time 0");
+
+			for (auto i = 0; i < skeleton_data->nodes_count; i++)
 			{
-				if (b_ref_frame)
+				const auto name_clr = gcnew String(names[i].c_str());
+
+				if (raw_anim != nullptr)
+				{
+					// Looking for nodes in current anim. If skel. node is not existing in anim, then skip it.
+					auto exist = false;
+					for (auto a = 0; a < raw_anim->node->Length; a++)
+					{
+						if (raw_anim->node[a]->name == name_clr)
+							exist = true;
+					}
+					if (!exist && i != 0)
+						continue;
+				}
+
+				if (i == 0)
 					sw->WriteLine("0 0 0 0 0 0 0"); //1.570796 3.141592
-			}
-			else if (i != 0)
-			{
-				if (b_ref_frame)
+				else
 				{
 					sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
 					sw->WriteLine(structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us));
-				}
-				else
-				{
-					auto temp = i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ";
-					temp += structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us);
-					if (name_clr == "RLegRoot")
-						RLegRoot = temp;
-					else if (name_clr == "LLegRoot")
-						LLegRoot = temp;
-					else if (name_clr == "LArmRoot")
-						LArmRoot = temp;
-					else if (name_clr == "RArmRoot")
-						RArmRoot = temp;
 				}
 			}
 		}
 
 		// Actual animation.
-		for (ushort time = 0; time < ema_data->animation[index]->duration; time++)
+		for (auto time = 0; time < ema_data->animation[index]->duration; time++)
 		{
-			auto ref_frame = 0;
-			if (b_ref_frame)
-				ref_frame = 1;
-
-			sw->WriteLine("time " + (time + ref_frame));
 			m_D3DWrap->update_ema(structure, names, animation_name, time);
+
+			sw->WriteLine("time " + (time + Convert::ToInt16(b_ref_frame)));
+
 			for (auto i = 0; i < skeleton_data->nodes_count; i++)
 			{
-				auto name_clr = gcnew String(names[i].c_str());
+				const auto name_clr = gcnew String(names[i].c_str());
+
+				if (raw_anim != nullptr)
+				{
+					// Looking for nodes in current anim. If skel. node is not existing in anim, then skip it.
+					auto exist = false;
+					for (auto a = 0; a < raw_anim->node->Length; a++)
+					{
+						if (raw_anim->node[a]->name == name_clr)
+							exist = true;
+					}
+					if (!exist && i != 0)
+						continue;
+				}
 
 				if (!name_clr->Equals("camera") && i == 0 && time == 0)
 					sw->WriteLine("0 0 0 0 0 0 0"); //1.570796 3.141592
 				else if (name_clr->Equals("camera") || i != 0)
 				{
-					if (time != 0 && (name_clr == "RLegRoot" || name_clr == "LLegRoot" || name_clr == "LArmRoot" || name_clr == "RArmRoot"))
-					{ /*Empty*/ }
+					if (raw_anim != nullptr)
+					{
+						sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
+						sw->WriteLine(structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us));
+					}
 					else
 					{
-						if (name_clr == "RLegRoot" && b_ref_frame != true)
-							sw->WriteLine(RLegRoot);
-						else if (name_clr == "LLegRoot" && b_ref_frame != true)
-							sw->WriteLine(LLegRoot);
-						else if (name_clr == "LArmRoot" && b_ref_frame != true)
-							sw->WriteLine(LArmRoot);
-						else if (name_clr == "RArmRoot" && b_ref_frame != true)
-							sw->WriteLine(RArmRoot);
+						if (time != 0 && (name_clr == "RLegRoot" || name_clr == "LLegRoot" || name_clr == "LArmRoot" || name_clr == "RArmRoot"))
+						{ /*Empty*/ }
 						else
 						{
-							sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
-							sw->WriteLine(structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us));
+							if (name_clr == "RLegRoot" && !b_ref_frame)
+								sw->WriteLine(RLegRootRef);
+							else if (name_clr == "LLegRoot" && !b_ref_frame)
+								sw->WriteLine(LLegRootRef);
+							else if (name_clr == "LArmRoot" && !b_ref_frame)
+								sw->WriteLine(LArmRootRef);
+							else if (name_clr == "RArmRoot" && !b_ref_frame)
+								sw->WriteLine(RArmRootRef);
+							else
+							{
+								sw->Write(i + " " + (-structure[i][0] * scale).ToString("F6", en_us) + " " + (structure[i][1] * scale).ToString("F6", en_us) + " " + (structure[i][2] * scale).ToString("F6", en_us) + " ");
+								sw->WriteLine(structure[i][3].ToString("F6", en_us) + " " + (-structure[i][4]).ToString("F6", en_us) + " " + (-structure[i][5]).ToString("F6", en_us));
+							}
 						}
 					}
 				}
