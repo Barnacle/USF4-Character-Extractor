@@ -1715,17 +1715,20 @@ namespace usf4_ce {
 					}
 				}
 
-				// Replacing node indexes with a correct one from skeleton
-				for (auto i = 0; i < import_anim->node->Length; i++)
+				if (skeleton_data != nullptr)
 				{
-					auto node_index = 0;
-					for (auto a = 0; a < skeleton_data->names->Length; a++)
+					// Replacing node indexes with a correct one from skeleton
+					for (auto i = 0; i < import_anim->node->Length; i++)
 					{
-						if (skeleton_data->names[a] == import_anim->node[i]->name)
-							node_index = a;
-					}
+						auto node_index = 0;
+						for (auto a = 0; a < skeleton_data->names->Length; a++)
+						{
+							if (skeleton_data->names[a] == import_anim->node[i]->name)
+								node_index = a;
+						}
 
-					import_anim->node[i]->index = node_index;
+						import_anim->node[i]->index = node_index;
+					}
 				}
 
 				ema_data->header->animation_count = ema_data->animation->Length + 1;
