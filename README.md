@@ -2,6 +2,14 @@
 
 Super/Ultra Street Fighter 4 character model viewer and exporter.
 
+### Requirements ###
+
+DirectX End-User Runtime  
+https://www.microsoft.com/en-Us/download/details.aspx?id=35
+
+Microsoft Visual C++ Redistributable 2015-2019  
+https://support.microsoft.com/en-us/topic/the-latest-supported-visual-c-downloads-2647da03-1eea-4433-9aff-95f26a218cc0
+
 ### Features ###
 
 * Character models and textures preview.
