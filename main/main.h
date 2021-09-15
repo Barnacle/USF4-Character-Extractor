@@ -1613,10 +1613,12 @@ namespace usf4_ce {
 		}
 
 		System::Void TopSplitContainer_SplitterMoved(System::Object^  sender, System::Windows::Forms::SplitterEventArgs^  e) {
-			m_D3DWrap->resize(TopSplitContainer->Panel2->Width, TopSplitContainer->Panel2->Height);
+			if (m_D3DWrap != nullptr)
+				m_D3DWrap->resize(TopSplitContainer->Panel2->Width, TopSplitContainer->Panel2->Height);
 		}
 		System::Void MainForm_SizeChanged(System::Object^  sender, System::EventArgs^  e) {
-			m_D3DWrap->resize(TopSplitContainer->Panel2->Width, TopSplitContainer->Panel2->Height);
+			if (m_D3DWrap != nullptr)
+				m_D3DWrap->resize(TopSplitContainer->Panel2->Width, TopSplitContainer->Panel2->Height);
 		}
 
 		TreeNode^ _currentNode = gcnew TreeNode();

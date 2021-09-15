@@ -40,8 +40,16 @@ HRESULT CD3DRender::init(HWND hwnd, const int width, const int height)
 	d3dpp.MultiSampleType = D3DMULTISAMPLE_8_SAMPLES;
 
 	// Create the D3DDevice
-	if (FAILED(g_D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &g_d3dDevice)))
-		return E_FAIL;
+	if (FAILED(g_D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING, &d3dpp, &g_d3dDevice)))
+	{
+		d3dpp.MultiSampleType = D3DMULTISAMPLE_NONE;
+
+		if (FAILED(g_D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING, &d3dpp, &g_d3dDevice)))
+		{
+			if (FAILED(g_D3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hwnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpp, &g_d3dDevice)))
+				return E_FAIL;
+		}
+	}
 
 	g_d3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
 	g_d3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
