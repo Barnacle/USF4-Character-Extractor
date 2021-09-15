@@ -10,7 +10,7 @@ https://www.microsoft.com/en-Us/download/details.aspx?id=35
 Microsoft Visual C++ Redistributable 2015-2019  
 https://support.microsoft.com/en-us/topic/the-latest-supported-visual-c-downloads-2647da03-1eea-4433-9aff-95f26a218cc0
 
-.NET Framework
+.NET Framework  
 https://dotnet.microsoft.com/download/dotnet-framework
 
 ### Features ###
